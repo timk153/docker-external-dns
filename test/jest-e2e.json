@@ -5,5 +5,15 @@
   "testRegex": ".e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
-  }
+  },
+  "reporters": [
+    [
+      "jest-junit",
+      {
+        "suiteName": "docker-compose-external-dns e2e tests",
+        "outputDirectory": "reports",
+        "outputName": "test-results-e2e-junit.xml"
+      }
+    ]
+  ]
 }

@@ -5,5 +5,11 @@
   "editor.formatOnType": true,
   "eslint.format.enable": false,
   "eslint.lintTask.enable": true,
-  "typescript.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": false
+  "typescript.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": false,
+  "files.associations": {
+    "**/.azure-pipelines/*.yaml": "azure-pipelines"
+  },
+  "[azure-pipelines]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
 }
