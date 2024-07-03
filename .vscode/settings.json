@@ -1,0 +1,9 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "editor.formatOnType": true,
+  "eslint.format.enable": false,
+  "eslint.lintTask.enable": true,
+  "typescript.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": false
+}

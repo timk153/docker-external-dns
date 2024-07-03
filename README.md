@@ -1,20 +1,96 @@
-# Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+# Docker compose external DNS
 
-# Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+This project was built using:<br/>
+[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-# Build and Test
-TODO: Describe and show how to build your code and run the tests. 
+This project does the following:
 
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
+- Reads labels from containers sharing the same docker runtime.<br/>
+  The labels contain DNS information.
+- Synchronises those records to a DNS provider
+- Runs at a regular interval (like a CRON job but interval is only programmable in seconds)
+- Supports multiple instances running, one per DNS zone or Subscription
+- Can only modify records (update / delete) that it created
+- Supports the following record types only:
+  - A
+  - CNAME
+  - MX
+  - NS
 
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+Currently only CloudFlare is supported as it was designed for a personal project with no other providers catered for.
+
+## Running locally
+
+### Installation
+
+```bash
+$ yarn install
+```
+
+### Running the app
+
+```bash
+# development
+$ yarn run start
+
+# watch mode
+$ yarn run start:dev
+
+# production mode
+$ yarn run start:prod
+```
+
+### Test
+
+```bash
+# unit tests
+$ yarn run test
+
+# e2e tests
+$ yarn run test:e2e
+
+# test coverage
+$ yarn run test:cov
+```
+
+## Integration, Deployment and Consuming
+
+The project deploys a docker image to docker hub.
+
+### Integration
+
+The main branch is protected, such that:
+
+- Changes must be made by pull request
+- Branches must Squah to main
+- No linting or format warnings or errors are permitted
+- All unit and integration tests must pass
+- Sufficient code coverage must be present (80%)
+- Docker image must build successfully
+- Must be linked to an issue
+
+Only once all of these occur can a pull request be completed.<br/>
+You should only address ONE issue per branch.<br/>
+If you want to address more than one, do them sequentially on their own branches.
+
+### Deployment
+
+- Occurs automatically when a Tag is created from main.
+- The docker image is built to production stage
+- Image is pushed to docker hub, project is tkilminster.<br/>
+  Tag is docker-compose-external-dns-{version}.</br>
+  {version} = `git describe`<br/>
+  `git describe` = outputs semantic version based on tag e.g. v1.0.1
+- Can be ran on a feature branch to generate a non-production image.<br/>
+  This allows you to deploy a feature branch with docker-compose to an environment.
+- Can be ran on main after squashing a feature branch without a new tag.<br/>
+  Like running against a feature branch, you could deploy this image and test it before making a new tag.
+
+### Consuming
+
+To consume the project, a person would reference the image in their docker-compose file, provide the appropriate environment variables and add labels to their services.
+
+## License
+
+This project is personal, but uses NEST.<br/>
+Nest is [MIT licensed](LICENSE).
