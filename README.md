@@ -78,8 +78,8 @@ If you want to address more than one, do them sequentially on their own branches
 - Occurs automatically when a Tag is created from main.
 - The docker image is built to production stage
 - Image is pushed to docker hub, project is tkilminster.<br/>
-  Tag is docker-compose-external-dns-{version}.</br>
-  {version} = `git describe`<br/>
+  Tag is docker-compose-external-dns-`version`.<br/>
+  `version` = `git describe`<br/>
   `git describe` = outputs semantic version based on tag e.g. v1.0.1
 - Can be ran on a feature branch to generate a non-production image.<br/>
   This allows you to deploy a feature branch with docker-compose to an environment.
