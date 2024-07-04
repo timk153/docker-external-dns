@@ -2,6 +2,7 @@
   "recommendations": [
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
-    "ms-azure-devops.azure-pipelines"
+    "ms-azure-devops.azure-pipelines",
+    "vscode-icons-team.vscode-icons"
   ]
 }

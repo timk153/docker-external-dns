@@ -1,0 +1,33 @@
+trigger:
+  tags:
+    include:
+      - v*
+
+stages:
+  - stage: build_and_publish
+    pool: default
+    variables:
+      CI: true
+    jobs:
+      - job: docker_build_and_push
+        steps:
+          - checkout: self
+            fetchTags: true
+            fetchDepth: 0 # explicitly disable shallow fetch
+
+          - task: PowerShell@2
+            displayName: Compute version number
+            inputs:
+              targetType: 'inline'
+              script: |
+                $gitVersion = git describe
+                Write-Host "##vso[task.setvariable variable=fullVersion;]docker-compose-external-dns-$gitVersion"
+
+          - task: Docker@2
+            displayName: Build and push docker image
+            inputs:
+              containerRegistry: 'Docker Hub'
+              repository: 'tkilminster/projects'
+              command: 'buildAndPush'
+              dockerfile: '**/Dockerfile'
+              tags: '$(fullVersion)'
