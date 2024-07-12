@@ -14,7 +14,7 @@ stages:
                 $identity = New-Guid
                 $name = "docker-compose-external-dns.quality.$identity"
                 docker build --target tests --tag $name .
-                docker run --name $name -a stdin -a stdout -a stderr $name
+                docker run -v /var/run/docker.sock:/var/run/docker.sock --name $name -a stdin -a stdout -a stderr $name
                 docker cp "$($name):/app/src" "$($env:ARTIFACT_STAGING_DIRECTORY)/src"
                 docker cp "$($name):/app/reports" "$($env:ARTIFACT_STAGING_DIRECTORY)/reports"
                 docker container rm $name
