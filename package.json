@@ -22,7 +22,7 @@
     "test:cov": "jest --reporters=default --coverage --coverageReporters=text",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --reporters=default --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json --reporters=default",
-    "test:e2e:watch": "jest --config ./test/jest-e2e.json --reporters=default",
+    "test:e2e:watch": "jest --config ./test/jest-e2e.json --reporters=default --watch",
     "test:ci": "(jest --ci --collectCoverage || true) && (eslint -f ./node_modules/eslint-junit/index.js . || exit 0)",
     "test:e2e:ci": "jest --ci --config ./test/jest-e2e.json || exit 0"
   },
@@ -34,6 +34,7 @@
     "@nestjs/platform-express": "^10.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "cloudflare": "^3.5.0",
     "dockerode": "^4.0.2",
     "joi": "^17.13.3",
     "reflect-metadata": "^0.2.0",

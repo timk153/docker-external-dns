@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import Docker from 'dockerode';
 import { NestedError } from '../errors/nested-error';
-import { DockerFactory } from './docker-factory';
+import { DockerFactory } from './docker.factory';
 
 jest.mock('dockerode');
 

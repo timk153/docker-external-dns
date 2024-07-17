@@ -10,7 +10,7 @@ import { DnsNsEntry } from '../dto/dnsns-entry';
 import { DnsbaseEntry, DNSTypes } from '../dto/dnsbase-entry';
 import { IConfiguration } from '../app.configuration';
 import { NestedError } from '../errors/nested-error';
-import { DockerFactory } from './docker-factory';
+import { DockerFactory } from './docker.factory';
 import { DnsaEntry } from '../dto/dnsa-entry';
 
 /**
@@ -63,7 +63,7 @@ export class DockerService {
       );
     }
 
-    this.dockerLabel = `${this.configService.get('PROJECT_LABEL', { infer: true })}.${this.configService.get('TAG_VALUE', { infer: true })}`;
+    this.dockerLabel = `${this.configService.get('PROJECT_LABEL', { infer: true })}.${this.configService.get('INSTANCE_ID', { infer: true })}`;
     this.state = States.Initialized;
   }
 
@@ -94,10 +94,10 @@ export class DockerService {
    * @param {Docker.ContainerInfo[]} containers containers with labels to deserialize
    * @returns {DnsbaseEntry[]} deserialized labels
    */
-  getDNSEntries(containers: Docker.ContainerInfo[]): DnsbaseEntry[] {
+  extractDNSEntries(containers: Docker.ContainerInfo[]): DnsbaseEntry[] {
     if (this.state !== States.Initialized)
       throw new Error(
-        'DockerService, getDNSEntries: not initialized, must call initialize',
+        'DockerService, extractDNSEntries: not initialized, must call initialize',
       );
 
     const result: DnsbaseEntry[] = [];
@@ -109,7 +109,7 @@ export class DockerService {
         ) as DnsbaseCloudflareEntry;
         if (baseInstance.id !== undefined) {
           this.logger.warn(
-            `DockerService, getDNSEntries: container with id ${current.Id} has 'id' within it's JSON label, please remove it`,
+            `DockerService, extractDNSEntries: container with id ${current.Id} has 'id' within it's JSON label, please remove it`,
           );
           return;
         }
@@ -128,9 +128,14 @@ export class DockerService {
           case DNSTypes.NS:
             instance = plainToInstance(DnsNsEntry, baseInstance);
             break;
+          case DNSTypes.Unsupported:
+            this.logger.warn(
+              `DockerService, extractDNSEntries: container with id ${current.Id} is using 'Unsupported' type, it will be ignored`,
+            );
+            return;
           default:
             this.logger.warn(
-              `DockerService, getDNSEntries: container with id ${current.Id} has an unrecognised shape, check the values`,
+              `DockerService, extractDNSEntries: container with id ${current.Id} has an unrecognised shape, check the values`,
             );
             return;
         }
@@ -139,7 +144,7 @@ export class DockerService {
         // warn and ignore if any errors
         if (errors.length !== 0) {
           this.logger.warn(
-            `DockerService, getDNSEntries: container with id ${current.Id} has validation errors`,
+            `DockerService, extractDNSEntries: container with id ${current.Id} has validation errors`,
             errors,
           );
           return;
@@ -149,7 +154,7 @@ export class DockerService {
       } catch (error) {
         // failed to parse the JSON
         this.logger.warn(
-          `DockerService, getDNSEntries: container with id ${current.Id} has a non JSON formatted label`,
+          `DockerService, extractDNSEntries: container with id ${current.Id} has a non JSON formatted label`,
         );
       }
     });

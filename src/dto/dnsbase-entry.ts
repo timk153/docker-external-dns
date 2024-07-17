@@ -8,6 +8,7 @@ export enum DNSTypes {
   CNAME,
   MX,
   NS,
+  Unsupported,
 }
 
 /**

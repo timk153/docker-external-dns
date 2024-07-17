@@ -2,14 +2,17 @@ import each from 'jest-each';
 import { validate } from 'class-validator';
 import { DNSTypes } from './dnsbase-entry';
 import { DnsMxEntry } from './dnsmx-entry';
+import { DnsMxCloudflareEntry } from './dnsmx-cloudflare-entry';
 
 /**
  * Returns a new valid DnsCanmeEntry.
  * Used by other test cases
  * @returns { DnsMxEntry } result
  */
-export function validDnsMxEntry() {
-  const result = new DnsMxEntry();
+export function validDnsMxEntry<T extends DnsMxEntry | DnsMxCloudflareEntry>(
+  EntryType: new () => T,
+) {
+  const result = new EntryType();
   result.type = DNSTypes.MX;
   result.name = 'testdomain.com';
   result.server = 'mx1.testdomain.com';
@@ -21,7 +24,7 @@ describe('DnsMxEntry', () => {
   let sut: DnsMxEntry;
 
   beforeEach(() => {
-    sut = validDnsMxEntry();
+    sut = validDnsMxEntry(DnsMxEntry);
   });
 
   it('should be defined', () => {

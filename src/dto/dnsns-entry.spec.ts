@@ -2,14 +2,17 @@ import each from 'jest-each';
 import { validate } from 'class-validator';
 import { DNSTypes } from './dnsbase-entry';
 import { DnsNsEntry } from './dnsns-entry';
+import { DnsNsCloudflareEntry } from './dnsns-cloudflare-entry';
 
 /**
  * Returns a new valid DnsNsEntry.
  * Used by other test cases
  * @returns { DnsNsEntry } result
  */
-export function validDnsNsEntry() {
-  const result = new DnsNsEntry();
+export function validDnsNsEntry<T extends DnsNsEntry | DnsNsCloudflareEntry>(
+  EntryType: new () => T,
+) {
+  const result = new EntryType();
   result.type = DNSTypes.NS;
   result.name = 'testdomain.com';
   result.server = 'ns1.testdomain.com';
@@ -20,7 +23,7 @@ describe('DnsNsEntry', () => {
   let sut: DnsNsEntry;
 
   beforeEach(() => {
-    sut = validDnsNsEntry();
+    sut = validDnsNsEntry(DnsNsEntry);
   });
 
   it('should be defined', () => {

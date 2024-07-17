@@ -6,13 +6,17 @@ import { ConfigService } from '@nestjs/config';
 import each from 'jest-each';
 import { validDnsAEntry } from '../dto/dnsa-entry.spec';
 import { validDnsCnameEntry } from '../dto/dnscname-entry.spec';
-import { DnsbaseEntry } from '../dto/dnsbase-entry';
+import { DnsbaseEntry, DNSTypes } from '../dto/dnsbase-entry';
 import { DnsaCloudflareEntry } from '../dto/dnsa-cloudflare-entry';
-import { DockerFactory } from './docker-factory';
+import { DockerFactory } from './docker.factory';
 import { DockerService, States } from './docker.service';
 import { NestedError } from '../errors/nested-error';
 import { validDnsMxEntry } from '../dto/dnsmx-entry.spec';
 import { validDnsNsEntry } from '../dto/dnsns-entry.spec';
+import { DnsaEntry } from '../dto/dnsa-entry';
+import { DnsCnameEntry } from '../dto/dnscname-entry';
+import { DnsMxEntry } from '../dto/dnsmx-entry';
+import { DnsNsEntry } from '../dto/dnsns-entry';
 
 jest.mock('@nestjs/common', () => {
   const mock = jest.createMockFromModule('@nestjs/common') as any;
@@ -60,15 +64,15 @@ describe('DockerService', () => {
   ] as unknown as Docker.ContainerInfo[];
   const mockConfigServiceGetValue = {
     PROJECT_LABEL: 'project-label',
-    TAG_VALUE: 'tag-value',
+    INSTANCE_ID: 'instance-id',
   };
   let expectedDockerLabel = '';
 
   beforeAll(() => {
-    const { PROJECT_LABEL, TAG_VALUE } = mockConfigServiceGetValue;
+    const { PROJECT_LABEL, INSTANCE_ID } = mockConfigServiceGetValue;
     process.env.PROJECT_LABEL = PROJECT_LABEL;
-    process.env.TAG_VALUE = TAG_VALUE;
-    expectedDockerLabel = `${PROJECT_LABEL}.${TAG_VALUE}`;
+    process.env.INSTANCE_ID = INSTANCE_ID;
+    expectedDockerLabel = `${PROJECT_LABEL}.${INSTANCE_ID}`;
   });
 
   afterAll(() => {
@@ -126,7 +130,7 @@ describe('DockerService', () => {
       expect(mockConfigService.get).toHaveBeenCalledWith('PROJECT_LABEL', {
         infer: true,
       });
-      expect(mockConfigService.get).toHaveBeenCalledWith('TAG_VALUE', {
+      expect(mockConfigService.get).toHaveBeenCalledWith('INSTANCE_ID', {
         infer: true,
       });
       expect(sut['dockerLabel']).toEqual(expectedDockerLabel);
@@ -214,11 +218,11 @@ describe('DockerService', () => {
       });
     });
 
-    describe('getDNSEntries', () => {
-      const mockAEntry = validDnsAEntry();
-      const mockCnameEntry = validDnsCnameEntry();
-      const mockMxEntry = validDnsMxEntry();
-      const mockNsEntry = validDnsNsEntry();
+    describe('extractDNSEntries', () => {
+      const mockAEntry = validDnsAEntry(DnsaEntry);
+      const mockCnameEntry = validDnsCnameEntry(DnsCnameEntry);
+      const mockMxEntry = validDnsMxEntry(DnsMxEntry);
+      const mockNsEntry = validDnsNsEntry(DnsNsEntry);
 
       let mockContainerInfoBuilder: ContainerInfoBuilder<DnsbaseEntry>;
       let mockAContainerInfo: Docker.ContainerInfo;
@@ -281,8 +285,29 @@ describe('DockerService', () => {
         ];
 
         // act / assert
-        expect(sut.getDNSEntries(paramContainers)).toEqual(expected);
+        expect(sut.extractDNSEntries(paramContainers)).toEqual(expected);
         expect(mockLogger.warn).not.toHaveBeenCalled();
+      });
+
+      it('should warn and ignore if type is Unsupported', () => {
+        // arrange
+        const mockUnsupportedEntry = {
+          ...mockAEntry,
+          type: DNSTypes.Unsupported,
+        };
+        const mockUnsupportedContainerInfo = mockContainerInfoBuilder
+          .WithId('id-unsupported')
+          .WithLabel(mockUnsupportedEntry)
+          .Build();
+
+        // act / assert
+        expect(sut.extractDNSEntries([mockUnsupportedContainerInfo])).toEqual(
+          [],
+        );
+        expect(mockLogger.warn).toHaveBeenCalledTimes(1);
+        expect(mockLogger.warn).toHaveBeenCalledWith(
+          `DockerService, extractDNSEntries: container with id ${mockUnsupportedContainerInfo.Id} is using 'Unsupported' type, it will be ignored`,
+        );
       });
 
       each(['', '  ', 'dsoifhadsopifhgas']).it(
@@ -295,13 +320,13 @@ describe('DockerService', () => {
           const paramContainers = createMockContainers(mockContainerInfo);
 
           // act
-          const result = sut.getDNSEntries(paramContainers);
+          const result = sut.extractDNSEntries(paramContainers);
 
           // assert
           expect(result).toStrictEqual(createMockContainersDefaultValidResult);
           expect(mockLogger.warn).toHaveBeenCalledTimes(1);
           expect(mockLogger.warn).toHaveBeenCalledWith(
-            `DockerService, getDNSEntries: container with id ${mockContainerInfo.Id} has a non JSON formatted label`,
+            `DockerService, extractDNSEntries: container with id ${mockContainerInfo.Id} has a non JSON formatted label`,
           );
         },
       );
@@ -327,13 +352,13 @@ describe('DockerService', () => {
           const paramContainers = createMockContainers(mockContainerInfo);
 
           // act
-          const result = sut.getDNSEntries(paramContainers);
+          const result = sut.extractDNSEntries(paramContainers);
 
           // assert
           expect(result).toStrictEqual(createMockContainersDefaultValidResult);
           expect(mockLogger.warn).toHaveBeenCalledTimes(1);
           expect(mockLogger.warn).toHaveBeenCalledWith(
-            `DockerService, getDNSEntries: container with id ${mockContainerInfo.Id} has an unrecognised shape, check the values`,
+            `DockerService, extractDNSEntries: container with id ${mockContainerInfo.Id} has an unrecognised shape, check the values`,
           );
         },
       );
@@ -348,13 +373,13 @@ describe('DockerService', () => {
         const paramContainers = createMockContainers(mockContainerInfo);
 
         // act
-        const result = sut.getDNSEntries(paramContainers);
+        const result = sut.extractDNSEntries(paramContainers);
 
         // assert
         expect(result).toStrictEqual(createMockContainersDefaultValidResult);
         expect(mockLogger.warn).toHaveBeenCalledTimes(1);
         expect(mockLogger.warn).toHaveBeenCalledWith(
-          `DockerService, getDNSEntries: container with id ${mockContainerInfo.Id} has validation errors`,
+          `DockerService, extractDNSEntries: container with id ${mockContainerInfo.Id} has validation errors`,
           expect.arrayContaining([
             expect.objectContaining({
               property: 'address',
@@ -378,13 +403,13 @@ describe('DockerService', () => {
         const paramContainers = createMockContainers(mockContainerInfo);
 
         // act
-        const result = sut.getDNSEntries(paramContainers);
+        const result = sut.extractDNSEntries(paramContainers);
 
         // assert
         expect(result).toStrictEqual(createMockContainersDefaultValidResult);
         expect(mockLogger.warn).toHaveBeenCalledTimes(1);
         expect(mockLogger.warn).toHaveBeenCalledWith(
-          `DockerService, getDNSEntries: container with id ${mockContainerInfo.Id} has 'id' within it's JSON label, please remove it`,
+          `DockerService, extractDNSEntries: container with id ${mockContainerInfo.Id} has 'id' within it's JSON label, please remove it`,
         );
       });
 
@@ -392,11 +417,13 @@ describe('DockerService', () => {
         // arrange
         sut['state'] = States.Unintialized;
         const error = new Error(
-          'DockerService, getDNSEntries: not initialized, must call initialize',
+          'DockerService, extractDNSEntries: not initialized, must call initialize',
         );
 
         // act / assert
-        expect(() => sut.getDNSEntries([mockAContainerInfo])).toThrow(error);
+        expect(() => sut.extractDNSEntries([mockAContainerInfo])).toThrow(
+          error,
+        );
       });
     });
   });

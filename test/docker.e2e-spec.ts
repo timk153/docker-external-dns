@@ -7,6 +7,7 @@ import {
   StartedTestContainer,
 } from 'testcontainers';
 import Dockerode from 'dockerode';
+import { AppModule } from '../src/app.module';
 import { DnsaEntry } from '../src/dto/dnsa-entry';
 import { DnsCnameEntry } from '../src/dto/dnscname-entry';
 import { DnsMxEntry } from '../src/dto/dnsmx-entry';
@@ -15,10 +16,10 @@ import { validDnsAEntry } from '../src/dto/dnsa-entry.spec';
 import { validDnsCnameEntry } from '../src/dto/dnscname-entry.spec';
 import { validDnsMxEntry } from '../src/dto/dnsmx-entry.spec';
 import { DockerService } from '../src/docker/docker.service';
-import { AppModule } from '../src/app.module';
 import { validDnsNsEntry } from '../src/dto/dnsns-entry.spec';
 
 describe('DockerService (e2e)', () => {
+  const backupEnvironment = { ...process.env };
   let app: INestApplication;
   let sut: DockerService;
 
@@ -54,13 +55,13 @@ describe('DockerService (e2e)', () => {
   // NOTE! this was attempted with docker-compose up had issues locally and in container
   //       Changed to orchestrate the containers in code instead.
   beforeAll(async () => {
-    entryValues.A = validDnsAEntry();
-    entryValues.AMultiLabel = validDnsAEntry();
+    entryValues.A = validDnsAEntry(DnsaEntry);
+    entryValues.AMultiLabel = validDnsAEntry(DnsaEntry);
     entryValues.AMultiLabel.name = 'multi.testdomain.com';
-    entryValues.CNAME = validDnsCnameEntry();
-    entryValues.MX = validDnsMxEntry();
-    entryValues.NS = validDnsNsEntry();
-    entryValues.Invalid = validDnsAEntry();
+    entryValues.CNAME = validDnsCnameEntry(DnsCnameEntry);
+    entryValues.MX = validDnsMxEntry(DnsMxEntry);
+    entryValues.NS = validDnsNsEntry(DnsNsEntry);
+    entryValues.Invalid = validDnsAEntry(DnsaEntry);
     entryValues.Invalid.name = 'not-an-fqdn';
 
     containerInstances.network = await new Network().start();
@@ -152,6 +153,8 @@ describe('DockerService (e2e)', () => {
     await containerInstances.NotDNS2.stop();
     await containerInstances.invalid.stop();
     await containerInstances.network.stop();
+
+    process.env = backupEnvironment;
   }, 3000000);
 
   beforeEach(async () => {
@@ -184,7 +187,7 @@ describe('DockerService (e2e)', () => {
 
   it('should parse the listed containers, skipping the invalid one', async () => {
     // act
-    const parsedContainers = sut.getDNSEntries(fetchedContainers);
+    const parsedContainers = sut.extractDNSEntries(fetchedContainers);
 
     // assert
     expect(parsedContainers[0]).toEqual(entryValues.NS);
