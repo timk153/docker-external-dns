@@ -1,9 +1,15 @@
 import each from 'jest-each';
 import { validate } from 'class-validator';
-import { DNSTypes } from './dnsbase-entry';
+import { DnsbaseEntry, DNSTypes } from './dnsbase-entry';
 import { DnsbaseCloudflareProxyEntry } from './dnsbase-cloudflare-proxy-entry';
 
-class MockDnsEntry extends DnsbaseCloudflareProxyEntry {}
+class MockDnsEntry extends DnsbaseCloudflareProxyEntry {
+  // not used, so can be ignored
+  // eslint-disable-next-line class-methods-use-this, @typescript-eslint/no-unused-vars
+  hasSameValue(otherEntry: DnsbaseEntry): boolean {
+    throw new Error('Method not implemented.');
+  }
+}
 
 describe('DnsbaseCloudflareProxyEntry', () => {
   let sut: MockDnsEntry;

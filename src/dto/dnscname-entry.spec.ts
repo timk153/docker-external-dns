@@ -11,12 +11,12 @@ import { DnsCnameCloudflareEntry } from './dnscname-cloudflare-entry';
  */
 export function validDnsCnameEntry<
   T extends DnsCnameEntry | DnsCnameCloudflareEntry,
->(EntryType: new () => T) {
+>(EntryType: new () => T, defaults?: Partial<T>) {
   const result = new EntryType();
   result.type = DNSTypes.CNAME;
-  result.name = 'test.testdomain.com';
-  result.target = 'testdomain.com';
-  result.proxy = false;
+  result.name = defaults?.name ?? 'test.testdomain.com';
+  result.target = defaults?.target ?? 'testdomain.com';
+  result.proxy = defaults?.proxy ?? false;
   return result;
 }
 
@@ -29,6 +29,77 @@ describe('DnsCnameEntry', () => {
 
   it('should be defined', () => {
     expect(new DnsCnameEntry()).toBeDefined();
+  });
+
+  describe('hasSameValue', () => {
+    each([DnsCnameEntry, DnsCnameCloudflareEntry]).it(
+      'should have the same value, but different identity (type %p)',
+      (type) => {
+        // arrange
+        const entry = validDnsCnameEntry(type);
+        const compare = validDnsCnameEntry(type);
+        compare.name = `${entry.name}-1`;
+        compare.type = DNSTypes.A;
+
+        // act / assert
+        expect(entry.hasSameValue(compare)).toBe(true);
+      },
+    );
+
+    each([DnsCnameEntry, DnsCnameCloudflareEntry]).it(
+      'should have the same value and identity (type %p)',
+      (type) => {
+        // arrange
+        const result = validDnsCnameEntry(type);
+
+        // act
+        expect(result.hasSameValue(result)).toBe(true);
+      },
+    );
+
+    each([
+      [DnsCnameEntry, 'different.com', undefined],
+      [DnsCnameEntry, undefined, true],
+      [DnsCnameEntry, 'different.com', true],
+      [DnsCnameCloudflareEntry, 'different.com', undefined],
+      [DnsCnameCloudflareEntry, undefined, true],
+      [DnsCnameCloudflareEntry, 'different.com', true],
+    ]).it(
+      'should not have the same value or identity (type: %p, target: %p, proxy: %p)',
+      (type, target, proxy) => {
+        // arrange
+        const entry = validDnsCnameEntry(type);
+        const compare = validDnsCnameEntry(type);
+        compare.name = `${entry.name}-1`;
+        compare.type = DNSTypes.A;
+        compare.target = target ?? entry.target;
+        compare.proxy = proxy === undefined ? entry.proxy : proxy;
+
+        // act / assert
+        expect(entry.hasSameValue(compare)).toBe(false);
+      },
+    );
+
+    each([
+      [DnsCnameEntry, 'different.com', undefined],
+      [DnsCnameEntry, undefined, true],
+      [DnsCnameEntry, 'different.com', true],
+      [DnsCnameCloudflareEntry, 'different.com', undefined],
+      [DnsCnameCloudflareEntry, undefined, true],
+      [DnsCnameCloudflareEntry, 'different.com', true],
+    ]).it(
+      'should not have the same value, but same identity (type: %p, target: %p, proxy: %p)',
+      (type, target, proxy) => {
+        // arrange
+        const entry = validDnsCnameEntry(type);
+        const compare = validDnsCnameEntry(type);
+        compare.target = target ?? entry.target;
+        compare.proxy = proxy === undefined ? entry.proxy : proxy;
+
+        // act
+        expect(entry.hasSameValue(compare)).toBe(false);
+      },
+    );
   });
 
   describe('validation', () => {

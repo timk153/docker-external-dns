@@ -11,12 +11,13 @@ import { DnsMxCloudflareEntry } from './dnsmx-cloudflare-entry';
  */
 export function validDnsMxEntry<T extends DnsMxEntry | DnsMxCloudflareEntry>(
   EntryType: new () => T,
+  defaults?: Partial<T>,
 ) {
   const result = new EntryType();
   result.type = DNSTypes.MX;
-  result.name = 'testdomain.com';
-  result.server = 'mx1.testdomain.com';
-  result.priority = 50;
+  result.name = defaults?.name ?? 'testdomain.com';
+  result.server = defaults?.server ?? 'mx1.testdomain.com';
+  result.priority = defaults?.priority ?? 50;
   return result;
 }
 
@@ -29,6 +30,77 @@ describe('DnsMxEntry', () => {
 
   it('should be defined', () => {
     expect(new DnsMxEntry()).toBeDefined();
+  });
+
+  describe('hasSameValue', () => {
+    each([DnsMxEntry, DnsMxCloudflareEntry]).it(
+      'should have the same value, but different identity (type %p)',
+      (type) => {
+        // arrange
+        const entry = validDnsMxEntry(type);
+        const compare = validDnsMxEntry(type);
+        compare.name = `${entry.name}-1`;
+        compare.type = DNSTypes.CNAME;
+
+        // act / assert
+        expect(entry.hasSameValue(compare)).toBe(true);
+      },
+    );
+
+    each([DnsMxEntry, DnsMxCloudflareEntry]).it(
+      'should have the same value and identity (type %p)',
+      (type) => {
+        // arrange
+        const result = validDnsMxEntry(type);
+
+        // act
+        expect(result.hasSameValue(result)).toBe(true);
+      },
+    );
+
+    each([
+      [DnsMxEntry, 'different.com', undefined],
+      [DnsMxEntry, undefined, 99],
+      [DnsMxEntry, 'different.com', 99],
+      [DnsMxCloudflareEntry, 'different.com', undefined],
+      [DnsMxCloudflareEntry, undefined, 99],
+      [DnsMxCloudflareEntry, 'different.com', 99],
+    ]).it(
+      'should not have the same value or identity (type: %p, server: %p, priority: %p)',
+      (type, server, priority) => {
+        // arrange
+        const entry = validDnsMxEntry(type);
+        const compare = validDnsMxEntry(type);
+        compare.name = `${entry.name}-1`;
+        compare.type = DNSTypes.A;
+        compare.server = server ?? entry.server;
+        compare.priority = priority ?? entry.priority;
+
+        // act / assert
+        expect(entry.hasSameValue(compare)).toBe(false);
+      },
+    );
+
+    each([
+      [DnsMxEntry, 'different.com', undefined],
+      [DnsMxEntry, undefined, 99],
+      [DnsMxEntry, 'different.com', 99],
+      [DnsMxCloudflareEntry, 'different.com', undefined],
+      [DnsMxCloudflareEntry, undefined, 99],
+      [DnsMxCloudflareEntry, 'different.com', 99],
+    ]).it(
+      'should not have the same value, but same identity (type: %p, server: %p, priority: %p)',
+      (type, server, priority) => {
+        // arrange
+        const entry = validDnsMxEntry(type);
+        const compare = validDnsMxEntry(type);
+        compare.server = server ?? entry.server;
+        compare.priority = priority ?? entry.priority;
+
+        // act
+        expect(entry.hasSameValue(compare)).toBe(false);
+      },
+    );
   });
 
   describe('validation', () => {

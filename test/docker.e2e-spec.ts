@@ -18,7 +18,7 @@ import { validDnsMxEntry } from '../src/dto/dnsmx-entry.spec';
 import { DockerService } from '../src/docker/docker.service';
 import { validDnsNsEntry } from '../src/dto/dnsns-entry.spec';
 
-describe('DockerService (e2e)', () => {
+describe('DockerService (Integration)', () => {
   const backupEnvironment = { ...process.env };
   let app: INestApplication;
   let sut: DockerService;

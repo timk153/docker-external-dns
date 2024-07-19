@@ -3,7 +3,6 @@ import Docker from 'dockerode';
 import { ConfigService } from '@nestjs/config';
 import { validateSync } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { DnsbaseCloudflareEntry } from 'src/dto/dnsbase-cloudflare-entry';
 import { DnsCnameEntry } from '../dto/dnscname-entry';
 import { DnsMxEntry } from '../dto/dnsmx-entry';
 import { DnsNsEntry } from '../dto/dnsns-entry';
@@ -12,6 +11,7 @@ import { IConfiguration } from '../app.configuration';
 import { NestedError } from '../errors/nested-error';
 import { DockerFactory } from './docker.factory';
 import { DnsaEntry } from '../dto/dnsa-entry';
+import { DnsBaseCloudflareEntry } from '../dto/dnsbase-entry.spec';
 
 /**
  * Possibe states of the docker service
@@ -106,7 +106,7 @@ export class DockerService {
         // try to parse the JSON
         const baseInstance = JSON.parse(
           current.Labels[this.dockerLabel],
-        ) as DnsbaseCloudflareEntry;
+        ) as DnsBaseCloudflareEntry;
         if (baseInstance.id !== undefined) {
           this.logger.warn(
             `DockerService, extractDNSEntries: container with id ${current.Id} has 'id' within it's JSON label, please remove it`,

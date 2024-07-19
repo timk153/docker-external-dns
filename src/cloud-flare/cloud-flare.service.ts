@@ -9,7 +9,6 @@ import {
   NSRecord,
   Record,
 } from 'cloudflare/resources/dns/records';
-import { DnsbaseCloudflareEntry } from '../dto/dnsbase-cloudflare-entry';
 import { DnsaCloudflareEntry } from '../dto/dnsa-cloudflare-entry';
 import { DnsCnameCloudflareEntry } from '../dto/dnscname-cloudflare-entry';
 import { DnsMxCloudflareEntry } from '../dto/dnsmx-cloudflare-entry';
@@ -17,6 +16,7 @@ import { DnsNsCloudflareEntry } from '../dto/dnsns-cloudflare-entry';
 import { DnsUnsupportedCloudFlareEntry } from '../dto/dnsunsupported-cloudflare-entry';
 import { DNSTypes } from '../dto/dnsbase-entry';
 import { NestedError } from '../errors/nested-error';
+import { DnsBaseCloudflareEntry } from '../dto/dnsbase-entry.spec';
 
 /**
  * Possible states of the CloudFlare service
@@ -131,13 +131,13 @@ export class CloudFlareService {
   }
 
   /**
-   * Maps the CloudFlare DNS Records to the common DnsbaseCloudflareEntry type.
+   * Maps the CloudFlare DNS Records to the common DnsBaseCloudflareEntry type.
    * @param {Cloudflare.DNS.Record[]} entries DNS entries from CloudFlare
-   * @returns {DnsbaseCloudflareEntry[]} Entries transformed into DnsbaseCloudflareEntry entries
+   * @returns {DnsBaseCloudflareEntry[]} Entries transformed into DnsBaseCloudflareEntry entries
    */
-  mapDNSEntries(entries: Cloudflare.DNS.Record[]): DnsbaseCloudflareEntry[] {
+  mapDNSEntries(entries: Cloudflare.DNS.Record[]): DnsBaseCloudflareEntry[] {
     return entries.map((cloudFlareEntry) => {
-      let result: DnsbaseCloudflareEntry;
+      let result: DnsBaseCloudflareEntry;
       switch (cloudFlareEntry.type) {
         case 'A': {
           const { content, proxied } = cloudFlareEntry as ARecord;

@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import Docker from 'dockerode';
 import { ConfigService } from '@nestjs/config';
 import each from 'jest-each';
+import { DnsUnsupportedCloudFlareEntry } from 'src/dto/dnsunsupported-cloudflare-entry';
 import { validDnsAEntry } from '../dto/dnsa-entry.spec';
 import { validDnsCnameEntry } from '../dto/dnscname-entry.spec';
 import { DnsbaseEntry, DNSTypes } from '../dto/dnsbase-entry';
@@ -294,7 +295,7 @@ describe('DockerService', () => {
         const mockUnsupportedEntry = {
           ...mockAEntry,
           type: DNSTypes.Unsupported,
-        };
+        } as unknown as DnsUnsupportedCloudFlareEntry;
         const mockUnsupportedContainerInfo = mockContainerInfoBuilder
           .WithId('id-unsupported')
           .WithLabel(mockUnsupportedEntry)
@@ -368,7 +369,7 @@ describe('DockerService', () => {
         mockAEntryInvalid.address = 'not-an-ip-address';
         const mockContainerInfo = mockContainerInfoBuilder
           .WithId('id-a')
-          .WithLabel(mockAEntryInvalid)
+          .WithLabel(mockAEntryInvalid as DnsaEntry)
           .Build();
         const paramContainers = createMockContainers(mockContainerInfo);
 

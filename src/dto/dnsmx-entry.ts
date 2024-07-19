@@ -12,4 +12,10 @@ export class DnsMxEntry extends DnsbaseEntry {
   @Min(0)
   @Max(65535)
   priority: number;
+
+  hasSameValue(otherEntry: DnsMxEntry): boolean {
+    return (
+      this.server === otherEntry.server && this.priority === otherEntry.priority
+    );
+  }
 }

@@ -37,7 +37,6 @@ import { validDnsMxEntry } from '../dto/dnsmx-entry.spec';
 import { validDnsNsEntry } from '../dto/dnsns-entry.spec';
 import { DnsUnsupportedCloudFlareEntry } from '../dto/dnsunsupported-cloudflare-entry';
 import { DNSTypes } from '../dto/dnsbase-entry';
-import { DnsbaseCloudflareEntry } from '../dto/dnsbase-cloudflare-entry';
 import { DnsaCloudflareEntry } from '../dto/dnsa-cloudflare-entry';
 import { DnsCnameCloudflareEntry } from '../dto/dnscname-cloudflare-entry';
 import { DnsMxCloudflareEntry } from '../dto/dnsmx-cloudflare-entry';
@@ -466,7 +465,7 @@ describe('CloudFlareService', () => {
 
       it('should deserialize successfully', () => {
         // arrange
-        const mockDNSEntries: DnsbaseCloudflareEntry[] = [
+        const mockDNSEntries: { id: string; name: string; type: DNSTypes }[] = [
           mockDNSAEntry,
           mockDNSCNAMEEntry,
           mockDNSMXEntry,

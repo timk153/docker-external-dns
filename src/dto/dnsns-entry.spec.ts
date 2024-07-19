@@ -11,11 +11,12 @@ import { DnsNsCloudflareEntry } from './dnsns-cloudflare-entry';
  */
 export function validDnsNsEntry<T extends DnsNsEntry | DnsNsCloudflareEntry>(
   EntryType: new () => T,
+  defaults?: Partial<T>,
 ) {
   const result = new EntryType();
   result.type = DNSTypes.NS;
-  result.name = 'testdomain.com';
-  result.server = 'ns1.testdomain.com';
+  result.name = defaults?.name ?? 'testdomain.com';
+  result.server = defaults?.server ?? 'ns1.testdomain.com';
   return result;
 }
 
@@ -28,6 +29,67 @@ describe('DnsNsEntry', () => {
 
   it('should be defined', () => {
     expect(new DnsNsEntry()).toBeDefined();
+  });
+
+  describe('hasSameValue', () => {
+    each([DnsNsEntry, DnsNsCloudflareEntry]).it(
+      'should have the same value, but different identity (type %p)',
+      (type) => {
+        // arrange
+        const entry = validDnsNsEntry(type);
+        const compare = validDnsNsEntry(type);
+        compare.name = `${entry.name}-1`;
+        compare.type = DNSTypes.CNAME;
+
+        // act / assert
+        expect(entry.hasSameValue(compare)).toBe(true);
+      },
+    );
+
+    each([DnsNsEntry, DnsNsCloudflareEntry]).it(
+      'should have the same value and identity (type %p)',
+      (type) => {
+        // arrange
+        const result = validDnsNsEntry(type);
+
+        // act
+        expect(result.hasSameValue(result)).toBe(true);
+      },
+    );
+
+    each([
+      [DnsNsEntry, 'different.com'],
+      [DnsNsCloudflareEntry, 'different.com'],
+    ]).it(
+      'should not have the same value or identity (type: %p, server: %p)',
+      (type, server) => {
+        // arrange
+        const entry = validDnsNsEntry(type);
+        const compare = validDnsNsEntry(type);
+        compare.name = `${entry.name}-1`;
+        compare.type = DNSTypes.A;
+        compare.server = server ?? entry.server;
+
+        // act / assert
+        expect(entry.hasSameValue(compare)).toBe(false);
+      },
+    );
+
+    each([
+      [DnsNsEntry, 'different.com'],
+      [DnsNsCloudflareEntry, 'different.com'],
+    ]).it(
+      'should not have the same value, but same identity (type: %p, server: %p)',
+      (type, server) => {
+        // arrange
+        const entry = validDnsNsEntry(type);
+        const compare = validDnsNsEntry(type);
+        compare.server = server ?? entry.server;
+
+        // act
+        expect(entry.hasSameValue(compare)).toBe(false);
+      },
+    );
   });
 
   describe('validation', () => {

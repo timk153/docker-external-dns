@@ -1,13 +1,14 @@
-import { IntersectionType } from '@nestjs/mapped-types';
 import { DnsaEntry } from './dnsa-entry';
-import { DnsbaseCloudflareEntry } from './dnsbase-cloudflare-entry';
 
 /**
- * Combines DnsaEntry and DnsbaseCloudflareEntry
+ * Combines DnsaEntry and DnsBaseCloudflareEntry
  *
  * This is the type as read from Cloudflare API
  */
-export class DnsaCloudflareEntry extends IntersectionType(
-  DnsaEntry,
-  DnsbaseCloudflareEntry,
-) {}
+export class DnsaCloudflareEntry extends DnsaEntry {
+  /**
+   * Generated ID from CloudFlare.
+   * No validation required
+   */
+  id: string;
+}

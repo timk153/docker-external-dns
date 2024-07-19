@@ -2,24 +2,44 @@ import each from 'jest-each';
 import { validate } from 'class-validator';
 import { DnsbaseEntry, DNSTypes } from './dnsbase-entry';
 
-class MockDnsEntry extends DnsbaseEntry {}
+export type DnsBaseCloudflareEntry = {
+  id: string;
+  name: string;
+  type: DNSTypes;
+};
+
+class MockDnsEntry extends DnsbaseEntry {
+  // implemented because it's required, but not used or tested in this suite.
+  // hence the reasons for the diabling comments
+  //
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
+  hasSameValue(otherEntry: DnsbaseEntry): boolean {
+    throw new Error('Method not implemented.');
+  }
+}
 
 describe('DnsbaseEntry', () => {
+  const sutName = 'testdomain.com';
+  const sutType = DNSTypes.CNAME;
   let sut: DnsbaseEntry;
 
   beforeEach(() => {
     sut = new MockDnsEntry();
-    sut.type = DNSTypes.CNAME;
-    sut.name = 'testdomain.com';
+    sut.type = sutType;
+    sut.name = sutName;
   });
 
   it('should be defined', () => {
     expect(new MockDnsEntry()).toBeDefined();
   });
 
+  it('should return a unique identifier', () => {
+    expect(sut.Key).toEqual(`${sut.type}-${sut.name}`);
+  });
+
   describe('validation', () => {
     it('should be valid', async () => {
-      // act / assert
+      // act ;/ ass;ert
       expect(validate(sut)).resolves.toHaveLength(0);
     });
 
