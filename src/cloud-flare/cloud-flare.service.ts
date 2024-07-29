@@ -8,15 +8,16 @@ import {
   MXRecord,
   NSRecord,
   Record,
+  RecordCreateParams,
+  RecordUpdateParams,
 } from 'cloudflare/resources/dns/records';
 import { DnsaCloudflareEntry } from '../dto/dnsa-cloudflare-entry';
 import { DnsCnameCloudflareEntry } from '../dto/dnscname-cloudflare-entry';
 import { DnsMxCloudflareEntry } from '../dto/dnsmx-cloudflare-entry';
 import { DnsNsCloudflareEntry } from '../dto/dnsns-cloudflare-entry';
 import { DnsUnsupportedCloudFlareEntry } from '../dto/dnsunsupported-cloudflare-entry';
-import { DNSTypes } from '../dto/dnsbase-entry';
+import { DnsbaseEntry, DNSTypes, ICloudFlareEntry } from '../dto/dnsbase-entry';
 import { NestedError } from '../errors/nested-error';
-import { DnsBaseCloudflareEntry } from '../dto/dnsbase-entry.spec';
 
 /**
  * Possible states of the CloudFlare service
@@ -87,6 +88,20 @@ export class CloudFlareService {
     }
   }
 
+  getZoneForEntry(
+    zones: Zone[],
+    entry: DnsbaseEntry,
+  ): { isSuccessful: boolean; zone?: Zone } {
+    const result = zones.find(({ name }) => entry.name.endsWith(name));
+    if (result === undefined) {
+      this.logger.warn(
+        `CloudFlareService, getZoneForEntry: No zone found for entry. (name: "${entry.name}", zones: "${JSON.stringify(zones.map((zone) => zone.name))}")`,
+      );
+      return { isSuccessful: false };
+    }
+    return { isSuccessful: true, zone: result };
+  }
+
   async getDNSEntries(zoneId: string): Promise<Cloudflare.DNS.Record[]> {
     if (this.state === State.Uninitialized)
       throw Error(
@@ -98,7 +113,7 @@ export class CloudFlareService {
       let paginatedResult = await this.cloudFlare.dns.records.list({
         zone_id: zoneId,
         comment: {
-          exact: `${this.configService.get('PROJECT_LABEL', { infer: true })}:${this.configService.get('INSTANCE_ID', { infer: true })}`,
+          exact: this.configService.get('ENTRY_IDENTIFIER', { infer: true }),
         },
       });
       result = [...result, ...paginatedResult.getPaginatedItems()];
@@ -131,13 +146,17 @@ export class CloudFlareService {
   }
 
   /**
-   * Maps the CloudFlare DNS Records to the common DnsBaseCloudflareEntry type.
+   * Maps the CloudFlare DNS Records to the common DnsBaseCloudflareEntry type
+   * @param {string} zoneId ID of the CloudFlare Zone these records were loaded from
    * @param {Cloudflare.DNS.Record[]} entries DNS entries from CloudFlare
-   * @returns {DnsBaseCloudflareEntry[]} Entries transformed into DnsBaseCloudflareEntry entries
+   * @returns {ICloudFlareEntry[]} Entries transformed into DnsBaseCloudflareEntry entries
    */
-  mapDNSEntries(entries: Cloudflare.DNS.Record[]): DnsBaseCloudflareEntry[] {
+  mapDNSEntries(
+    zoneId: string,
+    entries: Cloudflare.DNS.Record[],
+  ): ICloudFlareEntry[] {
     return entries.map((cloudFlareEntry) => {
-      let result: DnsBaseCloudflareEntry;
+      let result: ICloudFlareEntry;
       switch (cloudFlareEntry.type) {
         case 'A': {
           const { content, proxied } = cloudFlareEntry as ARecord;
@@ -186,7 +205,54 @@ export class CloudFlareService {
       const { id, name } = cloudFlareEntry;
       result.id = id as string;
       result.name = name;
+      result.zoneId = zoneId;
       return result;
     });
+  }
+
+  async createEntry(
+    entry:
+      | RecordCreateParams.ARecord
+      | RecordCreateParams.CNAMERecord
+      | RecordCreateParams.MXRecord
+      | RecordCreateParams.NSRecord,
+  ): Promise<void> {
+    try {
+      await this.cloudFlare.dns.records.create(entry);
+    } catch (error) {
+      throw new NestedError(
+        `CloudFlareService, createEntry: Cloudflare errored creating entry. (${JSON.stringify(entry)})`,
+        error,
+      );
+    }
+  }
+
+  async updateEntry(
+    recordId: string,
+    entry:
+      | RecordUpdateParams.ARecord
+      | RecordUpdateParams.CNAMERecord
+      | RecordUpdateParams.MXRecord
+      | RecordUpdateParams.NSRecord,
+  ): Promise<void> {
+    try {
+      await this.cloudFlare.dns.records.update(recordId, entry);
+    } catch (error) {
+      throw new NestedError(
+        `CloudFlareService, createEntry: Cloudflare errored updating entry. (${JSON.stringify(entry)})`,
+        error,
+      );
+    }
+  }
+
+  async deleteEntry(recordId: string, zoneId: string): Promise<void> {
+    try {
+      await this.cloudFlare.dns.records.delete(recordId, { zone_id: zoneId });
+    } catch (error) {
+      throw new NestedError(
+        `CloudFlareService, createEntry: Cloudflare errored deleting entry. (zone_id: ${zoneId}, dnsRecordId: ${recordId})`,
+        error,
+      );
+    }
   }
 }

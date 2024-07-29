@@ -21,10 +21,10 @@
     "test:watch": "jest --reporters=default --watch",
     "test:cov": "jest --reporters=default --coverage --coverageReporters=text",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --reporters=default --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json --reporters=default",
-    "test:e2e:watch": "jest --config ./test/jest-e2e.json --reporters=default --watch",
+    "test:e2e": "jest --config ./test/jest-e2e.json --runInBand --reporters=default",
+    "test:e2e:watch": "jest --config ./test/jest-e2e.json --runInBand --reporters=default --watch",
     "test:ci": "(jest --ci --collectCoverage || true) && (eslint -f ./node_modules/eslint-junit/index.js . || exit 0)",
-    "test:e2e:ci": "jest --ci --config ./test/jest-e2e.json || exit 0"
+    "test:e2e:ci": "jest --ci --runInBand --config ./test/jest-e2e.json || exit 0"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

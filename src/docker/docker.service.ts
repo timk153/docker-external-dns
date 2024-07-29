@@ -63,7 +63,9 @@ export class DockerService {
       );
     }
 
-    this.dockerLabel = `${this.configService.get('PROJECT_LABEL', { infer: true })}.${this.configService.get('INSTANCE_ID', { infer: true })}`;
+    this.dockerLabel = this.configService.get('ENTRY_IDENTIFIER', {
+      infer: true,
+    }) as string;
     this.state = States.Initialized;
   }
 
@@ -100,57 +102,95 @@ export class DockerService {
         'DockerService, extractDNSEntries: not initialized, must call initialize',
       );
 
-    const result: DnsbaseEntry[] = [];
+    const results: {
+      [key: string]: { dns: DnsbaseEntry; container: Docker.ContainerInfo };
+    } = {};
+    const duplicates: {
+      [key: string]: { dns: DnsbaseEntry; container: Docker.ContainerInfo }[];
+    } = {};
     containers.forEach((current) => {
       try {
         // try to parse the JSON
-        const baseInstance = JSON.parse(
+        const entries = JSON.parse(
           current.Labels[this.dockerLabel],
-        ) as DnsBaseCloudflareEntry;
-        if (baseInstance.id !== undefined) {
+        ) as DnsBaseCloudflareEntry[];
+        if (!Array.isArray(entries)) {
           this.logger.warn(
-            `DockerService, extractDNSEntries: container with id ${current.Id} has 'id' within it's JSON label, please remove it`,
+            `DockerService, extractDNSEntries: container with id ${current.Id} has an unrecognised shape, check the values`,
           );
           return;
         }
-        // Cast to appropriate type
-        let instance: DnsbaseEntry;
-        switch (baseInstance.type) {
-          case DNSTypes.A:
-            instance = plainToInstance(DnsaEntry, baseInstance);
-            break;
-          case DNSTypes.CNAME:
-            instance = plainToInstance(DnsCnameEntry, baseInstance);
-            break;
-          case DNSTypes.MX:
-            instance = plainToInstance(DnsMxEntry, baseInstance);
-            break;
-          case DNSTypes.NS:
-            instance = plainToInstance(DnsNsEntry, baseInstance);
-            break;
-          case DNSTypes.Unsupported:
-            this.logger.warn(
-              `DockerService, extractDNSEntries: container with id ${current.Id} is using 'Unsupported' type, it will be ignored`,
-            );
-            return;
-          default:
-            this.logger.warn(
-              `DockerService, extractDNSEntries: container with id ${current.Id} has an unrecognised shape, check the values`,
-            );
-            return;
-        }
-        // validate
-        const errors = validateSync(instance);
-        // warn and ignore if any errors
-        if (errors.length !== 0) {
+        if (entries.length === 0) {
           this.logger.warn(
-            `DockerService, extractDNSEntries: container with id ${current.Id} has validation errors`,
-            errors,
+            `DockerService, extractDNSEntries: container with id ${current.Id} has empty array for a label and has been ignored`,
           );
           return;
         }
-        // valid! add to list and return
-        result.push(instance);
+        entries.forEach((entry) => {
+          if (entry.id !== undefined) {
+            this.logger.warn(
+              `DockerService, extractDNSEntries: container with id ${current.Id} has 'id' within it's JSON label, please remove it`,
+            );
+            return;
+          }
+          // Cast to appropriate type
+          let instance: DnsbaseEntry;
+          switch (entry.type) {
+            case DNSTypes.A:
+              instance = plainToInstance(DnsaEntry, entry);
+              break;
+            case DNSTypes.CNAME:
+              instance = plainToInstance(DnsCnameEntry, entry);
+              break;
+            case DNSTypes.MX:
+              instance = plainToInstance(DnsMxEntry, entry);
+              break;
+            case DNSTypes.NS:
+              instance = plainToInstance(DnsNsEntry, entry);
+              break;
+            case DNSTypes.Unsupported:
+              this.logger.warn(
+                `DockerService, extractDNSEntries: container with id ${current.Id} is using 'Unsupported' type, it will be ignored`,
+              );
+              return;
+            default:
+              this.logger.warn(
+                `DockerService, extractDNSEntries: container with id ${current.Id} has an unrecognised shape, check the values`,
+              );
+              return;
+          }
+          // validate
+          const errors = validateSync(instance);
+          // warn and ignore if any errors
+          if (errors.length !== 0) {
+            this.logger.warn(
+              `DockerService, extractDNSEntries: container with id ${current.Id} has validation errors`,
+              errors,
+            );
+            return;
+          }
+          if (duplicates[instance.Key] !== undefined)
+            // if a duplication has already been detected
+            // add to suplicates list
+            duplicates[instance.Key].push({
+              dns: instance,
+              container: current,
+            });
+          else if (results[instance.Key] === undefined)
+            // no duplication and no result registered
+            // add to results list
+            results[instance.Key] = { dns: instance, container: current };
+          else {
+            // duplicate detected.
+            // no duplicate previously detected.
+            // remove from results and add both to duplicate list.
+            duplicates[instance.Key] = [
+              results[instance.Key],
+              { dns: instance, container: current },
+            ];
+            delete results[instance.Key];
+          }
+        });
       } catch (error) {
         // failed to parse the JSON
         this.logger.warn(
@@ -158,6 +198,20 @@ export class DockerService {
         );
       }
     });
-    return result;
+    // iterate duplicates to warn
+    Object.entries(duplicates).forEach(([, entries]) => {
+      const containerIds = JSON.stringify(
+        entries.map((entry) => entry.container.Id),
+      );
+      const conflictingIdentity = JSON.stringify({
+        type: entries[0].dns.type,
+        name: entries[0].dns.name,
+      });
+      this.logger.warn(
+        `DockerService, extractDNSEntries: containers with id's ${containerIds} have share duplicate entries for '${conflictingIdentity}'; all will be ignored`,
+      );
+    });
+
+    return Object.values(results).map((entry) => entry.dns);
   }
 }

@@ -28,7 +28,7 @@ export const validationSchema = Joi.object({
 }).xor('API_TOKEN', 'API_TOKEN_FILE');
 
 // loads configuration which requires bespoke logic
-export const customConfiguration = () => {
+export const loadConfigurationApiTokenFile = () => {
   // only run if API_TOKEN_FILE isn't undefined
   if (process.env.API_TOKEN_FILE === undefined) return {};
   try {
@@ -65,10 +65,18 @@ export const customConfiguration = () => {
   }
 };
 
+// loads constants composed of one or more variables
+export const loadConfigurationComposedConstants = () => {
+  const { PROJECT_LABEL, INSTANCE_ID } = process.env;
+  return {
+    ENTRY_IDENTIFIER: `${PROJECT_LABEL}:${INSTANCE_ID}`,
+  };
+};
+
 // ConfigModule import
 export const getConfigModuleImport = () =>
   ConfigModule.forRoot({
-    load: [customConfiguration],
+    load: [loadConfigurationApiTokenFile, loadConfigurationComposedConstants],
     cache: false,
     ignoreEnvVars: false,
     ignoreEnvFile: true,
@@ -79,4 +87,5 @@ export const getConfigModuleImport = () =>
 export interface IConfiguration {
   PROJECT_LABEL: string;
   INSTANCE_ID: string;
+  ENTRY_IDENTIFIER: string;
 }

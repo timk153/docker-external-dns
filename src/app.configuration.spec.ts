@@ -66,9 +66,12 @@ describe('App Configuration', () => {
 
       // ensures the custom configuration isn't parsed as this mutates the configuration
       // and has behaviour associated with specific values being set.
-      const spyCustomConfiguration = jest
-        .spyOn(ConfigurationModule, 'customConfiguration')
+      const spyLoadConfigurationApiTokenFile = jest
+        .spyOn(ConfigurationModule, 'loadConfigurationApiTokenFile')
         .mockReturnValue({});
+      const spyLoadConfigurationComposedConstants = jest
+        .spyOn(ConfigurationModule, 'loadConfigurationComposedConstants')
+        .mockReturnValue({ ENTRY_IDENTIFIER: '' });
 
       process.env.PROJECT_LABEL = projectLabel;
       process.env.INSTANCE_ID = instanceId;
@@ -93,7 +96,8 @@ describe('App Configuration', () => {
       );
 
       // clean up
-      spyCustomConfiguration.mockRestore();
+      spyLoadConfigurationApiTokenFile.mockRestore();
+      spyLoadConfigurationComposedConstants.mockRestore();
     },
   );
 
@@ -161,7 +165,7 @@ describe('App Configuration', () => {
     },
   );
 
-  describe('customConfiguration', () => {
+  describe('loadConfigurationApiTokenFile', () => {
     const envApiTokenFile = '/run/secrets/API_TOKEN_FILE';
 
     beforeEach(() => {
@@ -219,5 +223,33 @@ describe('App Configuration', () => {
         );
       },
     );
+  });
+
+  describe('loadConfigurationComposedConstants', () => {
+    it('should compose ENTRY_IDENTIFIER', async () => {
+      // arrange
+      const paramProjectLabel = 'project-label';
+      const paramInstanceId = 'instance-id';
+
+      const spyLoadConfigurationApiTokenFile = jest
+        .spyOn(ConfigurationModule, 'loadConfigurationApiTokenFile')
+        .mockReturnValue({});
+
+      process.env.PROJECT_LABEL = paramProjectLabel;
+      process.env.INSTANCE_ID = paramInstanceId;
+      setEnvironmentVariable('API_TOKEN', mockReadFileSyncValue);
+      setEnvironmentVariable('API_TOKEN_FILE', undefined);
+
+      // act
+      const sut = await getSystemUnderTest();
+
+      // assert
+      expect(sut.get('ENTRY_IDENTIFIER', { infer: true })).toEqual(
+        `${paramProjectLabel}:${paramInstanceId}`,
+      );
+
+      // clean up
+      spyLoadConfigurationApiTokenFile.mockRestore();
+    });
   });
 });

@@ -3,6 +3,7 @@ import { validate } from 'class-validator';
 import { DnsbaseEntry, DNSTypes } from './dnsbase-entry';
 
 export type DnsBaseCloudflareEntry = {
+  zoneId: string;
   id: string;
   name: string;
   type: DNSTypes;

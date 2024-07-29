@@ -1,16 +1,16 @@
-import { DnsbaseEntry } from './dto/dnsbase-entry';
+import { DnsbaseEntry, ICloudFlareEntry } from './dto/dnsbase-entry';
 
 /**
  * Represents the DNS Entries set difference
  */
 export type SetDifference = {
-  unchanged: DnsbaseEntry[];
+  unchanged: ICloudFlareEntry[];
   add: DnsbaseEntry[];
   update: {
-    old: DnsbaseEntry;
+    old: ICloudFlareEntry;
     update: DnsbaseEntry;
   }[];
-  delete: DnsbaseEntry[];
+  delete: ICloudFlareEntry[];
 };
 
 /**
@@ -29,7 +29,7 @@ export type SetDifference = {
  */
 export function computeSetDifference(
   dockerEntries: DnsbaseEntry[],
-  cloudFlareEntries: DnsbaseEntry[],
+  cloudFlareEntries: ICloudFlareEntry[],
 ): SetDifference {
   // build index from docker entries
   const dockerEntryIndex = dockerEntries.reduce(
@@ -51,7 +51,7 @@ export function computeSetDifference(
     {} as {
       [key: string]: {
         docker: DnsbaseEntry;
-        cloudFlare: DnsbaseEntry;
+        cloudFlare: ICloudFlareEntry;
       };
     },
   );

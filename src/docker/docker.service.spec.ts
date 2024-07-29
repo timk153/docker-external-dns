@@ -4,7 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import Docker from 'dockerode';
 import { ConfigService } from '@nestjs/config';
 import each from 'jest-each';
-import { DnsUnsupportedCloudFlareEntry } from 'src/dto/dnsunsupported-cloudflare-entry';
+import { DnsUnsupportedCloudFlareEntry } from '../dto/dnsunsupported-cloudflare-entry';
 import { validDnsAEntry } from '../dto/dnsa-entry.spec';
 import { validDnsCnameEntry } from '../dto/dnscname-entry.spec';
 import { DnsbaseEntry, DNSTypes } from '../dto/dnsbase-entry';
@@ -27,7 +27,7 @@ jest.mock('@nestjs/common', () => {
 });
 
 class ContainerInfoBuilder<T extends DnsbaseEntry> {
-  labelValue: T;
+  labelValues: T[] = [];
 
   idValue: string;
 
@@ -39,7 +39,7 @@ class ContainerInfoBuilder<T extends DnsbaseEntry> {
   }
 
   WithLabel(label: T) {
-    this.labelValue = label;
+    this.labelValues.push(label);
     return this;
   }
 
@@ -47,8 +47,11 @@ class ContainerInfoBuilder<T extends DnsbaseEntry> {
     const result = createMock<Docker.ContainerInfo>();
     result.Id = this.idValue;
     result.Labels = {
-      [this.dockerLabel]: JSON.stringify(this.labelValue),
+      [this.dockerLabel]: JSON.stringify(this.labelValues),
     };
+
+    this.labelValues = [];
+
     return result;
   }
 }
@@ -64,16 +67,14 @@ describe('DockerService', () => {
     'container-info-2',
   ] as unknown as Docker.ContainerInfo[];
   const mockConfigServiceGetValue = {
-    PROJECT_LABEL: 'project-label',
-    INSTANCE_ID: 'instance-id',
+    ENTRY_IDENTIFIER: 'project-label:instance-id',
   };
   let expectedDockerLabel = '';
 
   beforeAll(() => {
-    const { PROJECT_LABEL, INSTANCE_ID } = mockConfigServiceGetValue;
-    process.env.PROJECT_LABEL = PROJECT_LABEL;
-    process.env.INSTANCE_ID = INSTANCE_ID;
-    expectedDockerLabel = `${PROJECT_LABEL}.${INSTANCE_ID}`;
+    const { ENTRY_IDENTIFIER } = mockConfigServiceGetValue;
+    process.env.ENTRY_IDENTIFIER = ENTRY_IDENTIFIER;
+    expectedDockerLabel = ENTRY_IDENTIFIER;
   });
 
   afterAll(() => {
@@ -127,11 +128,8 @@ describe('DockerService', () => {
       // assert
       expect(mockDockerFactory.get).toHaveBeenCalledTimes(1);
       expect(sut['docker']).toBe(mockDockerFactoryGetValue);
-      expect(mockConfigService.get).toHaveBeenCalledTimes(2);
-      expect(mockConfigService.get).toHaveBeenCalledWith('PROJECT_LABEL', {
-        infer: true,
-      });
-      expect(mockConfigService.get).toHaveBeenCalledWith('INSTANCE_ID', {
+      expect(mockConfigService.get).toHaveBeenCalledTimes(1);
+      expect(mockConfigService.get).toHaveBeenCalledWith('ENTRY_IDENTIFIER', {
         infer: true,
       });
       expect(sut['dockerLabel']).toEqual(expectedDockerLabel);
@@ -224,10 +222,17 @@ describe('DockerService', () => {
       const mockCnameEntry = validDnsCnameEntry(DnsCnameEntry);
       const mockMxEntry = validDnsMxEntry(DnsMxEntry);
       const mockNsEntry = validDnsNsEntry(DnsNsEntry);
+      const mockMultiLabelAEntry = validDnsAEntry(DnsaEntry, {
+        name: 'multilabel-a.test-domain.com',
+      });
+      const mockMultiLabelCnameEntry = validDnsCnameEntry(DnsCnameEntry, {
+        name: 'multilabel-cname.test-domain.com',
+      });
 
       let mockContainerInfoBuilder: ContainerInfoBuilder<DnsbaseEntry>;
       let mockAContainerInfo: Docker.ContainerInfo;
       let mockCnameContainerInfo: Docker.ContainerInfo;
+      let mockMultiLabelContainerInfo: Docker.ContainerInfo;
       let mockMxContainerInfo: Docker.ContainerInfo;
       let mockNsContainerInfo: Docker.ContainerInfo;
 
@@ -244,6 +249,12 @@ describe('DockerService', () => {
         mockCnameContainerInfo = mockContainerInfoBuilder
           .WithId('id-cname')
           .WithLabel(mockCnameEntry)
+          .Build();
+
+        mockMultiLabelContainerInfo = mockContainerInfoBuilder
+          .WithId('id-multilabel')
+          .WithLabel(mockMultiLabelAEntry)
+          .WithLabel(mockMultiLabelCnameEntry)
           .Build();
 
         mockMxContainerInfo = mockContainerInfoBuilder
@@ -263,6 +274,11 @@ describe('DockerService', () => {
         mockNsContainerInfo,
       ];
       const createMockContainersDefaultValidResult = [mockAEntry, mockNsEntry];
+      const createMockContainersDefaultValidMultiLabelResult = [
+        mockAEntry,
+        mockMxEntry,
+        mockNsEntry,
+      ];
 
       let mockLogger: Logger;
 
@@ -275,14 +291,17 @@ describe('DockerService', () => {
         const paramContainers = [
           mockAContainerInfo,
           mockCnameContainerInfo,
+          mockMultiLabelContainerInfo,
           mockMxContainerInfo,
           mockNsContainerInfo,
         ];
         const expected = [
           mockAEntry,
           mockCnameEntry,
-          mockMxContainerInfo,
-          mockNsContainerInfo,
+          mockMultiLabelAEntry,
+          mockMultiLabelCnameEntry,
+          mockMxEntry,
+          mockNsEntry,
         ];
 
         // act / assert
@@ -290,7 +309,73 @@ describe('DockerService', () => {
         expect(mockLogger.warn).not.toHaveBeenCalled();
       });
 
-      it('should warn and ignore if type is Unsupported', () => {
+      it('should warn and ignore all if two or more entries share the same unique identifier', () => {
+        // arrange
+        const paramContainers = [
+          mockAContainerInfo,
+          mockCnameContainerInfo,
+          mockMxContainerInfo,
+          mockContainerInfoBuilder
+            .WithId('id-cname')
+            .WithLabel({
+              ...mockCnameEntry,
+              target: 'something-else.com',
+            } as DnsCnameEntry)
+            .Build(),
+          mockContainerInfoBuilder
+            .WithId('id-cname')
+            .WithLabel({
+              ...mockCnameEntry,
+              target: 'a-third.different.com',
+            } as DnsCnameEntry)
+            .Build(),
+          mockContainerInfoBuilder
+            .WithId('id-cname')
+            .WithLabel({
+              ...mockMxEntry,
+              server: 'mx1.different-value.com',
+            } as DnsMxEntry)
+            .Build(),
+          mockNsContainerInfo,
+        ];
+        const expected = [mockAEntry, mockNsEntry];
+        const expectedWarnings = [
+          {
+            containerIds: JSON.stringify([
+              paramContainers[1].Id,
+              paramContainers[3].Id,
+              paramContainers[4].Id,
+            ]),
+            entries: JSON.stringify({
+              type: mockCnameEntry.type,
+              name: mockCnameEntry.name,
+            }),
+          },
+          {
+            containerIds: JSON.stringify([
+              paramContainers[2].Id,
+              paramContainers[5].Id,
+            ]),
+            entries: JSON.stringify({
+              type: mockMxEntry.type,
+              name: mockMxEntry.name,
+            }),
+          },
+        ];
+
+        // act
+        expect(sut.extractDNSEntries(paramContainers)).toEqual(expected);
+
+        // assert
+        expect(mockLogger.warn).toHaveBeenCalledTimes(2);
+        expectedWarnings.forEach(({ containerIds, entries }) => {
+          expect(mockLogger.warn).toHaveBeenCalledWith(
+            `DockerService, extractDNSEntries: containers with id's ${containerIds} have share duplicate entries for '${entries}'; all will be ignored`,
+          );
+        });
+      });
+
+      it('should warn and ignore if type is Unsupported, but process other valid entries', () => {
         // arrange
         const mockUnsupportedEntry = {
           ...mockAEntry,
@@ -299,12 +384,13 @@ describe('DockerService', () => {
         const mockUnsupportedContainerInfo = mockContainerInfoBuilder
           .WithId('id-unsupported')
           .WithLabel(mockUnsupportedEntry)
+          .WithLabel(mockAEntry)
           .Build();
 
         // act / assert
-        expect(sut.extractDNSEntries([mockUnsupportedContainerInfo])).toEqual(
-          [],
-        );
+        expect(sut.extractDNSEntries([mockUnsupportedContainerInfo])).toEqual([
+          mockAEntry,
+        ]);
         expect(mockLogger.warn).toHaveBeenCalledTimes(1);
         expect(mockLogger.warn).toHaveBeenCalledWith(
           `DockerService, extractDNSEntries: container with id ${mockUnsupportedContainerInfo.Id} is using 'Unsupported' type, it will be ignored`,
@@ -363,13 +449,65 @@ describe('DockerService', () => {
           );
         },
       );
-      it('should warn and ignore if invalid', () => {
+
+      each(['[]', '[     ]']).it(
+        "should warn and ignore if it is empty JSON array ('%p')",
+        (label) => {
+          // arrange
+          const mockContainerInfo = createMock<Docker.ContainerInfo>();
+          mockContainerInfo.Id = 'conatiner-info-id';
+          mockContainerInfo.Labels = { [expectedDockerLabel]: label };
+          const paramContainers = createMockContainers(mockContainerInfo);
+
+          // act
+          const result = sut.extractDNSEntries(paramContainers);
+
+          // assert
+          expect(result).toStrictEqual(createMockContainersDefaultValidResult);
+          expect(mockLogger.warn).toHaveBeenCalledTimes(1);
+          expect(mockLogger.warn).toHaveBeenCalledWith(
+            `DockerService, extractDNSEntries: container with id ${mockContainerInfo.Id} has empty array for a label and has been ignored`,
+          );
+        },
+      );
+
+      each([
+        'true',
+        '12345',
+        JSON.stringify({ some: 'test', garbage: false }),
+      ]).it(
+        "should warn and ignore if it is a JSON array with an unrecognised value ('%p'), but process other valid entries",
+        (garbage) => {
+          // arrange
+          const mockContainerInfo = createMock<Docker.ContainerInfo>();
+          mockContainerInfo.Id = 'conatiner-info-id';
+          mockContainerInfo.Labels = {
+            [expectedDockerLabel]: JSON.stringify([garbage, mockMxEntry]),
+          };
+          const paramContainers = createMockContainers(mockContainerInfo);
+
+          // act
+          const result = sut.extractDNSEntries(paramContainers);
+
+          // assert
+          expect(result).toStrictEqual(
+            createMockContainersDefaultValidMultiLabelResult,
+          );
+          expect(mockLogger.warn).toHaveBeenCalledTimes(1);
+          expect(mockLogger.warn).toHaveBeenCalledWith(
+            `DockerService, extractDNSEntries: container with id ${mockContainerInfo.Id} has an unrecognised shape, check the values`,
+          );
+        },
+      );
+
+      it('should warn and ignore if invalid, but process other valid entries', () => {
         // arrange
         const mockAEntryInvalid = { ...mockAEntry };
         mockAEntryInvalid.address = 'not-an-ip-address';
         const mockContainerInfo = mockContainerInfoBuilder
           .WithId('id-a')
           .WithLabel(mockAEntryInvalid as DnsaEntry)
+          .WithLabel(mockMxEntry)
           .Build();
         const paramContainers = createMockContainers(mockContainerInfo);
 
@@ -377,7 +515,9 @@ describe('DockerService', () => {
         const result = sut.extractDNSEntries(paramContainers);
 
         // assert
-        expect(result).toStrictEqual(createMockContainersDefaultValidResult);
+        expect(result).toEqual(
+          createMockContainersDefaultValidMultiLabelResult,
+        );
         expect(mockLogger.warn).toHaveBeenCalledTimes(1);
         expect(mockLogger.warn).toHaveBeenCalledWith(
           `DockerService, extractDNSEntries: container with id ${mockContainerInfo.Id} has validation errors`,
@@ -393,13 +533,15 @@ describe('DockerService', () => {
         // Consider mocking class-validator and wiring up it's errors for these unit tests.
         // Will still require integration test
       });
-      it('should warn and ignore if id is present', () => {
+
+      it('should warn and ignore if id is present, but process other valid entries', () => {
         // arrange
         const mockAEntryWithId = { ...mockAEntry } as DnsaCloudflareEntry;
         mockAEntryWithId.id = 'cloudflare-id-value';
         const mockContainerInfo = mockContainerInfoBuilder
           .WithId('id-a')
           .WithLabel(mockAEntryWithId)
+          .WithLabel(mockMxEntry)
           .Build();
         const paramContainers = createMockContainers(mockContainerInfo);
 
@@ -407,7 +549,9 @@ describe('DockerService', () => {
         const result = sut.extractDNSEntries(paramContainers);
 
         // assert
-        expect(result).toStrictEqual(createMockContainersDefaultValidResult);
+        expect(result).toStrictEqual(
+          createMockContainersDefaultValidMultiLabelResult,
+        );
         expect(mockLogger.warn).toHaveBeenCalledTimes(1);
         expect(mockLogger.warn).toHaveBeenCalledWith(
           `DockerService, extractDNSEntries: container with id ${mockContainerInfo.Id} has 'id' within it's JSON label, please remove it`,

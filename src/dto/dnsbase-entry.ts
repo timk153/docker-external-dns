@@ -1,6 +1,25 @@
 import { IsEnum, IsFQDN } from 'class-validator';
 
 /**
+ * Basic interface which says at least type must exist.
+ */
+export interface IHasDnsType {
+  type: DNSTypes;
+}
+
+/**
+ * Properties expected if the entry originated from cloudflare
+ */
+export interface ICloudFlareEntry extends IHasDnsType {
+  id: string;
+  zoneId: string;
+  name: string;
+
+  get Key(): string;
+  hasSameValue(otherEntry: DnsbaseEntry): boolean;
+}
+
+/**
  * Types of DNS entry supported
  */
 export enum DNSTypes {

@@ -1,9 +1,17 @@
-import { DnsbaseEntry } from './dnsbase-entry';
+import { DnsbaseEntry, ICloudFlareEntry } from './dnsbase-entry';
 
 /**
  * Exists to allow unsupported types returned by CloudFlare can be procedded.
  */
-export class DnsUnsupportedCloudFlareEntry extends DnsbaseEntry {
+export class DnsUnsupportedCloudFlareEntry
+  extends DnsbaseEntry
+  implements ICloudFlareEntry
+{
+  /**
+   * ID of the cloudflare zone this record belongs to
+   */
+  zoneId: string;
+
   /**
    * Generated ID from CloudFlare.
    * No validation required
