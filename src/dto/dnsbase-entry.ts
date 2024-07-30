@@ -11,11 +11,34 @@ export interface IHasDnsType {
  * Properties expected if the entry originated from cloudflare
  */
 export interface ICloudFlareEntry extends IHasDnsType {
+  /**
+   * CloudFlare ID for this record
+   */
   id: string;
+
+  /**
+   * ID of the Zone this record belongs to in CloudFlare
+   */
   zoneId: string;
+
+  /**
+   * Name of this record.
+   * Must be a fully qualified domain name
+   */
   name: string;
 
+  /**
+   * Unique identifier for this record.
+   * Combination of zone id and name.
+   */
   get Key(): string;
+
+  /**
+   * Determines if this entry shares identical values with another entry.
+   * Does NOT check if identities match.
+   * @param otherEntry Entry to check for sameness
+   * @returns true if identical values else false
+   */
   hasSameValue(otherEntry: DnsbaseEntry): boolean;
 }
 
@@ -34,9 +57,27 @@ export enum DNSTypes {
  * The base type for all DNS entries
  */
 export abstract class DnsbaseEntry {
+  /**
+   * The type of this record.
+   * For example:
+   * - A
+   * - CNAME
+   * - MX
+   * - NS
+   */
   @IsEnum(DNSTypes)
   type: DNSTypes;
 
+  /**
+   * The name of this record.
+   * Must be a FQDN.
+   *
+   * For example for a cname:
+   * test.mydomain.com
+   *
+   * For an a:
+   * mydomain.com
+   */
   @IsFQDN()
   name: string;
 

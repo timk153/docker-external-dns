@@ -27,6 +27,10 @@ export enum State {
   Initialized,
 }
 
+/**
+ * Behaviors associated with CloudFlare.
+ * For example, creating, updating and deleting DNS records.
+ */
 @Injectable()
 export class CloudFlareService {
   private logger = new Logger(CloudFlareService.name);
@@ -37,6 +41,13 @@ export class CloudFlareService {
 
   constructor(private configService: ConfigService) {}
 
+  /**
+   * Initializes the service.
+   * Required before calling any public methods that interact with CloudFlare directly.
+   *
+   * Configures CloudFlare.
+   * @throws {Error} if already initialized when called.
+   */
   initialize() {
     if (this.state === State.Initialized)
       throw Error(
@@ -50,6 +61,10 @@ export class CloudFlareService {
     this.state = State.Initialized;
   }
 
+  /**
+   * Fetches from CloudFlare all the zones that can be read
+   * @returns {Promise<Zone[]>} Promise which resolves to all the accessible CloudFlare Zones
+   */
   async getZones(): Promise<Zone[]> {
     if (this.state === State.Uninitialized)
       throw Error(
@@ -88,6 +103,18 @@ export class CloudFlareService {
     }
   }
 
+  /**
+   * Given an array of CloudFlare Zones and a business object representing a DNS Entry.
+   * Determines which zone if any the entry belongs to.
+   *
+   * It does this by comparing the domain name suffix in the name of the entry to the zones.
+   *
+   * Will warn if no match is found.
+   *
+   * @param zones List of zones to determine if the entry belong to
+   * @param entry The entry to find the zone for
+   * @returns An object determining if the operation was successful. If it was, it also includes the result.
+   */
   getZoneForEntry(
     zones: Zone[],
     entry: DnsbaseEntry,
@@ -102,6 +129,13 @@ export class CloudFlareService {
     return { isSuccessful: true, zone: result };
   }
 
+  /**
+   * For the given zone, fetches the DNS entries from CloudFlare
+   * @param zoneId Zone to fetch entries for
+   * @returns A promise which resolves to the records in the zone
+   * @throws {Error} If service isn't initialized.
+   * @throws {NestedError} If CloudFlare errors fetching DNS records.
+   */
   async getDNSEntries(zoneId: string): Promise<Cloudflare.DNS.Record[]> {
     if (this.state === State.Uninitialized)
       throw Error(
@@ -210,6 +244,11 @@ export class CloudFlareService {
     });
   }
 
+  /**
+   * Creates an Entry in CloudFlare
+   * @param entry The entry to create
+   * @throws {NestedError} if CloudFlare errors creating the entry
+   */
   async createEntry(
     entry:
       | RecordCreateParams.ARecord
@@ -227,6 +266,12 @@ export class CloudFlareService {
     }
   }
 
+  /**
+   * Updates an entry in CloudFlare
+   * @param recordId The id of the record to update
+   * @param entry The entry to be updated
+   * @throws {NestedError} if CloudFlare errors updating the entry
+   */
   async updateEntry(
     recordId: string,
     entry:
@@ -245,6 +290,12 @@ export class CloudFlareService {
     }
   }
 
+  /**
+   * Deletes an entry in CloudFlare
+   * @param recordId Record id to be deleted
+   * @param zoneId Zone the record belongs to
+   * @throws {NestedError} if CloudFlare errors deleteing the entry
+   */
   async deleteEntry(recordId: string, zoneId: string): Promise<void> {
     try {
       await this.cloudFlare.dns.records.delete(recordId, { zone_id: zoneId });

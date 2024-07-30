@@ -19,6 +19,12 @@ export class CronService implements OnModuleDestroy {
     private appService: AppService,
   ) {}
 
+  /**
+   * Starts the CRON Job executing.
+   * Will execute "synchronise" immediately on invocation and then every x seconds
+   * as distated by the environment variable EXECUTION_FREQUENCY_SECONDS.
+   * @throws {Error} If service is already started
+   */
   start() {
     if (this.state === State.Started)
       throw new Error('CronService, start: Service already started');
@@ -35,6 +41,10 @@ export class CronService implements OnModuleDestroy {
     this.state = State.Started;
   }
 
+  /**
+   * Stops the CronJob executing.
+   * @throws {Error} if CRON job is not running.
+   */
   stop() {
     if (this.state === State.Stopped)
       throw Error('CronService, stop: Service already stopped');
@@ -42,6 +52,12 @@ export class CronService implements OnModuleDestroy {
     this.state = State.Stopped;
   }
 
+  /**
+   * Lifecycle event hook for NestJs:
+   * https://docs.nestjs.com/fundamentals/lifecycle-events
+   *
+   * Stops the cron job service if the application is shutting down.
+   */
   onModuleDestroy() {
     this.stop();
   }

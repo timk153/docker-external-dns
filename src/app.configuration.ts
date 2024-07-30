@@ -32,7 +32,13 @@ export const validationSchema = Joi.object({
     .empty(),
 }).xor('API_TOKEN', 'API_TOKEN_FILE');
 
-// loads configuration which requires bespoke logic
+/**
+ * Loads the configuration api token file whilst the configuration is being loaded.
+ * Details can be found here: https://docs.nestjs.com/techniques/configuration
+ * @throws {NestedError} if API_TOKEN fails to validate
+ * @throws {NestedError} if unable to read and validate value present in API_TOKEN_FILE
+ * @returns Segment of configuration to be made available by NestJS ConfigService
+ */
 export const loadConfigurationApiTokenFile = () => {
   // only run if API_TOKEN_FILE isn't undefined
   if (process.env.API_TOKEN_FILE === undefined) return {};
@@ -70,7 +76,10 @@ export const loadConfigurationApiTokenFile = () => {
   }
 };
 
-// loads constants composed of one or more variables
+/**
+ * Dynamically computes configuration entries from other configuration entries.
+ * @returns Composed configuration values to be accessible from ConfigService
+ */
 export const loadConfigurationComposedConstants = () => {
   const { PROJECT_LABEL, INSTANCE_ID } = process.env;
   return {
@@ -78,7 +87,10 @@ export const loadConfigurationComposedConstants = () => {
   };
 };
 
-// ConfigModule import
+/**
+ * Configures the ConfigModule for NestJS to load dynamic configuration values and validate them.
+ * @returns ConfigModule import configuration for NestJS.
+ */
 export const getConfigModuleImport = () =>
   ConfigModule.forRoot({
     load: [loadConfigurationApiTokenFile, loadConfigurationComposedConstants],

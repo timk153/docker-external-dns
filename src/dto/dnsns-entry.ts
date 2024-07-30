@@ -5,9 +5,20 @@ import { DnsbaseEntry, DNSTypes, IHasDnsType } from './dnsbase-entry';
  * Represents an NS record
  */
 export class DnsNsEntry extends DnsbaseEntry {
+  /**
+   * The name server.
+   * Must be a FQDN.
+   * e.g. ns1.testdomain.com
+   */
   @IsFQDN()
   server: string;
 
+  /**
+   * Determines if another DnsNsEntry has the same values as this one.
+   * Does not comapre identities only values.
+   * @param otherEntry Other DnsNsEntry to compare values with
+   * @returns true if identical in value else false
+   */
   hasSameValue(otherEntry: DnsNsEntry): boolean {
     return this.server === otherEntry.server;
   }

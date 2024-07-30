@@ -46,6 +46,7 @@ export class DockerService {
 
   /**
    * Initializes the class by fetching the docker instance
+   * @throws { Error } If service is already initialized
    * @throws { NestedError } throws if err initializing docker
    */
   initialize(): void {
@@ -72,6 +73,9 @@ export class DockerService {
   /**
    * Finds containers with the labels associated with this instance of the docker-compose-external-dns project.
    * Returns the containers information verbatim.
+   * @returns Promise resolving to the docker containers
+   * @throws {Error} If serivce hasn't been initialized
+   * @throws {NestedError} If docker throws an error fetching containers
    * */
   async getContainers(): Promise<Docker.ContainerInfo[]> {
     if (this.state !== States.Initialized)
@@ -95,6 +99,7 @@ export class DockerService {
    * Converts to appropriate type and validates
    * @param {Docker.ContainerInfo[]} containers containers with labels to deserialize
    * @returns {DnsbaseEntry[]} deserialized labels
+   * @throws {Error} If serivce hasn't been initialized
    */
   extractDNSEntries(containers: Docker.ContainerInfo[]): DnsbaseEntry[] {
     if (this.state !== States.Initialized)

@@ -3,6 +3,12 @@ import { AppModule } from './app.module';
 import { AppService } from './app.service';
 import { CronService } from './cron/cron.service';
 
+/**
+ * Main application bootstrap!
+ * Initializes the NestJS application.
+ * Initializes the application services.
+ * Starts the CRON job to synchronise the DNS entries.
+ */
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
   app.enableShutdownHooks();

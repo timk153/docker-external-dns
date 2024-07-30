@@ -9,10 +9,21 @@ import { DnsMxEntry } from '../dto/dnsmx-entry';
 import { DnsaEntry } from '../dto/dnsa-entry';
 import { DnsNsEntry } from '../dto/dnsns-entry';
 
+/**
+ * Object creation for CloudFlare data transfer objects.
+ * Maps from internal business object types to cloudlfare types.
+ */
 @Injectable()
 export class CloudFlareFactory {
   constructor(private configService: ConfigService) {}
 
+  /**
+   * Creates an A Record Parameter object.
+   * Required when creating or updating an A Record on CloudFlare.
+   * @param zoneId The zone this parameter object will be associated with
+   * @param param1 The DnsAEntry that represents this CloudFlare entry.
+   * @returns The associated CloudFlare business object
+   */
   createOrUpdateARecordParams(
     zoneId: string,
     { name, address, proxy }: DnsaEntry,
@@ -27,6 +38,13 @@ export class CloudFlareFactory {
     };
   }
 
+  /**
+   * Creates a CNAME Record Parameter object.
+   * Required when creating or updating an CNAME Record on CloudFlare.
+   * @param zoneId The zone this parameter object will be associated with
+   * @param param1 The DnsCnameEntry that represents this CloudFlare entry.
+   * @returns The associated CloudFlare business object
+   */
   createOrUpdateCNAMERecordParams(
     zoneId: string,
     { name, target, proxy }: DnsCnameEntry,
@@ -41,6 +59,13 @@ export class CloudFlareFactory {
     };
   }
 
+  /**
+   * Creates a MX Record Parameter object.
+   * Required when creating or updating an MX Record on CloudFlare.
+   * @param zoneId The zone this parameter object will be associated with
+   * @param param1 The DnsMxEntry that represents this CloudFlare entry.
+   * @returns The associated CloudFlare business object
+   */
   createOrUpdateMXRecordParams(
     zoneId: string,
     { name, server, priority }: DnsMxEntry,
@@ -55,6 +80,13 @@ export class CloudFlareFactory {
     };
   }
 
+  /**
+   * Creates a NS Record Parameter object.
+   * Required when creating or updating an NS Record on CloudFlare.
+   * @param zoneId The zone this parameter object will be associated with
+   * @param param1 The DnsNsEntry that represents this CloudFlare entry.
+   * @returns The associated CloudFlare business object
+   */
   createOrUpdateNSRecordParams(
     zoneId: string,
     { name, server }: DnsNsEntry,

@@ -18,6 +18,10 @@ export enum State {
   Initialized,
 }
 
+/**
+ * Behaviors to initialize the applications services and execute the synchronization between
+ * the docker labels and CloudFlare.
+ */
 @Injectable()
 export class AppService {
   private state = State.Uninitialized;
@@ -29,7 +33,8 @@ export class AppService {
   ) {}
 
   /**
-   * Initialize AppService to enable synchronisation
+   * Initialize AppService.
+   * Initializes CloudFlare and Docker services
    */
   initialize() {
     this.cloudFlareService.initialize();
