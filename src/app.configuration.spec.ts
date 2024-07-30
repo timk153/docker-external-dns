@@ -52,16 +52,23 @@ describe('App Configuration', () => {
   }
 
   each([
-    ['project-label1', 'instance-id2', mockReadFileSyncValue, undefined],
+    ['project-label1', 'instance-id2', 120, mockReadFileSyncValue, undefined],
     [
       'project_label1',
       'instance-id2',
+      120,
       undefined,
       '/run/secrets/API_TOKEN_FILE',
     ],
   ]).it(
-    'should validate: { PROJECT_LABEL: "%p", INSTANCE_ID: "%p", API_TOKEN: "%p", API_TOKEN_FILE: "%p" }',
-    async (projectLabel, instanceId, apiToken, apiTokenFile) => {
+    'should validate: { PROJECT_LABEL: "%p", INSTANCE_ID: "%p", EXECUTION_FREQUENCY_SECONDS: "%p", API_TOKEN: "%p", API_TOKEN_FILE: "%p" }',
+    async (
+      projectLabel,
+      instanceId,
+      executionFrequencySeconds,
+      apiToken,
+      apiTokenFile,
+    ) => {
       // arrange
 
       // ensures the custom configuration isn't parsed as this mutates the configuration
@@ -75,6 +82,7 @@ describe('App Configuration', () => {
 
       process.env.PROJECT_LABEL = projectLabel;
       process.env.INSTANCE_ID = instanceId;
+      process.env.EXECUTION_FREQUENCY_SECONDS = executionFrequencySeconds;
       setEnvironmentVariable('API_TOKEN', apiToken);
       setEnvironmentVariable('API_TOKEN_FILE', apiTokenFile);
 
@@ -87,6 +95,9 @@ describe('App Configuration', () => {
       );
       expect(sut.get('INSTANCE_ID', { infer: true })).toEqual(
         process.env.INSTANCE_ID,
+      );
+      expect(sut.get('EXECUTION_FREQUENCY_SECONDS', { infer: true })).toEqual(
+        Number.parseInt(process.env.EXECUTION_FREQUENCY_SECONDS as string, 10),
       );
       expect(sut.get('API_TOKEN', { infer: true })).toEqual(
         process.env.API_TOKEN,
@@ -102,26 +113,35 @@ describe('App Configuration', () => {
   );
 
   each([
-    ['project&label', 'valid', mockReadFileSyncValue, undefined],
-    ['valid', '{tag}_%value%', mockReadFileSyncValue, undefined],
-    ['valid', 'valid', undefined, 'invalid'],
-    ['valid', 'valid', undefined, undefined],
-    ['valid', 'valid', undefined, ''],
-    ['valid', 'valid', undefined, '   '],
-    ['valid', 'valid', apiTokenInvalidTestCases[0], undefined],
-    ['valid', 'valid', apiTokenInvalidTestCases[1], undefined],
-    ['valid', 'valid', apiTokenInvalidTestCases[2], undefined],
-    ['valid', 'valid', apiTokenInvalidTestCases[3], undefined],
-    ['valid', 'valid', apiTokenInvalidTestCases[4], undefined],
-    ['valid', 'valid', apiTokenInvalidTestCases[5], undefined],
-    ['valid', 'valid', apiTokenInvalidTestCases[6], undefined],
-    ['valid', 'valid', apiTokenInvalidTestCases[7], undefined],
+    ['project&label', 'valid', 60, mockReadFileSyncValue, undefined],
+    ['valid', '{tag}_%value%', 60, mockReadFileSyncValue, undefined],
+    ['valid', 'valid', 60, undefined, 'invalid'],
+    ['valid', 'valid', 60, undefined, undefined],
+    ['valid', 'valid', 60, undefined, ''],
+    ['valid', 'valid', 60, undefined, '   '],
+    ['valid', 'valid', 60, apiTokenInvalidTestCases[0], undefined],
+    ['valid', 'valid', 60, apiTokenInvalidTestCases[1], undefined],
+    ['valid', 'valid', 60, apiTokenInvalidTestCases[2], undefined],
+    ['valid', 'valid', 60, apiTokenInvalidTestCases[3], undefined],
+    ['valid', 'valid', 60, apiTokenInvalidTestCases[4], undefined],
+    ['valid', 'valid', 60, apiTokenInvalidTestCases[5], undefined],
+    ['valid', 'valid', 60, apiTokenInvalidTestCases[6], undefined],
+    ['valid', 'valid', 60, apiTokenInvalidTestCases[7], undefined],
+    ['valid', 'valid', 0, mockReadFileSyncValue, undefined],
+    ['valid', 'valid', 'SomethingNotNumeric', mockReadFileSyncValue, undefined],
   ]).it(
-    'should invalidate: { PROJECT_LABEL: "%p", INSTANCE_ID: "%p", API_TOKEN: "%p", API_TOKEN_FILE: "%p" }',
-    async (projectLabel, instanceId, apiToken, apiTokenFile) => {
+    'should invalidate: { PROJECT_LABEL: "%p", INSTANCE_ID: "%p", EXECUTION_FREQUENCY_SECONDS: "%p", API_TOKEN: "%p", API_TOKEN_FILE: "%p" }',
+    async (
+      projectLabel,
+      instanceId,
+      executionFrequencySeconds,
+      apiToken,
+      apiTokenFile,
+    ) => {
       // arrange
       process.env.PROJECT_LABEL = projectLabel;
       process.env.INSTANCE_ID = instanceId;
+      process.env.EXECUTION_FREQUENCY_SECONDS = executionFrequencySeconds;
       setEnvironmentVariable('API_TOKEN', apiToken);
       setEnvironmentVariable('API_TOKEN_FILE', apiTokenFile);
 
@@ -134,6 +154,7 @@ describe('App Configuration', () => {
     // arrange
     delete process.env.PROJECT_LABEL;
     delete process.env.INSTANCE_ID;
+    delete process.env.EXECUTION_FREQUENCY_SECONDS;
     process.env.API_TOKEN = mockReadFileSyncValue;
 
     // act
@@ -144,6 +165,7 @@ describe('App Configuration', () => {
       'docker-compose-external-dns',
     );
     expect(sut.get('INSTANCE_ID', { infer: true })).toEqual('1');
+    expect(sut.get('EXECUTION_FREQUENCY_SECONDS', { infer: true })).toEqual(60);
   });
 
   each(['', '     ']).it(
@@ -152,6 +174,7 @@ describe('App Configuration', () => {
       // arrange
       process.env.PROJECT_LABEL = element;
       process.env.INSTANCE_ID = element;
+      process.env.EXECUTION_FREQUENCY_SECONDS = '';
       process.env.API_TOKEN = mockReadFileSyncValue;
 
       // act
@@ -162,6 +185,9 @@ describe('App Configuration', () => {
         'docker-compose-external-dns',
       );
       expect(sut.get('INSTANCE_ID', { infer: true })).toEqual('1');
+      expect(sut.get('EXECUTION_FREQUENCY_SECONDS', { infer: true })).toEqual(
+        60,
+      );
     },
   );
 

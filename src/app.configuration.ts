@@ -15,6 +15,11 @@ export const validationSchema = Joi.object({
     .trim()
     .empty('')
     .default('1'),
+  EXECUTION_FREQUENCY_SECONDS: Joi.number()
+    .integer()
+    .min(1)
+    .empty('')
+    .default(60),
   API_TOKEN: Joi.string()
     .pattern(/^[A-Za-z0-9_]+$/)
     .min(10)

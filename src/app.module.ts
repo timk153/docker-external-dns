@@ -5,6 +5,7 @@ import { getConfigModuleImport } from './app.configuration';
 import { CloudFlareService } from './cloud-flare/cloud-flare.service';
 import { CloudFlareFactory } from './cloud-flare/cloud-flare.factory';
 import { AppService } from './app.service';
+import { CronService } from './cron/cron.service';
 
 @Module({
   imports: [getConfigModuleImport()],
@@ -14,6 +15,7 @@ import { AppService } from './app.service';
     CloudFlareService,
     CloudFlareFactory,
     AppService,
+    CronService,
   ],
 })
 export class AppModule {}
