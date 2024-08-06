@@ -4,18 +4,29 @@ import {
   RecordUpdateParams,
 } from 'cloudflare/resources/dns/records';
 import { ConfigService } from '@nestjs/config';
+import { ConsoleLoggerService } from '../logger.service';
 import { DnsCnameEntry } from '../dto/dnscname-entry';
 import { DnsMxEntry } from '../dto/dnsmx-entry';
 import { DnsaEntry } from '../dto/dnsa-entry';
 import { DnsNsEntry } from '../dto/dnsns-entry';
+import { getLogClassDecorator } from '../utility.functions';
+
+let loggerPointer: ConsoleLoggerService;
+const LogDecorator = getLogClassDecorator(() => loggerPointer);
 
 /**
  * Object creation for CloudFlare data transfer objects.
  * Maps from internal business object types to cloudlfare types.
  */
+@LogDecorator()
 @Injectable()
 export class CloudFlareFactory {
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private configService: ConfigService,
+    private loggerService: ConsoleLoggerService,
+  ) {
+    loggerPointer = this.loggerService;
+  }
 
   /**
    * Creates an A Record Parameter object.

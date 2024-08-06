@@ -11,6 +11,7 @@ import { DnsMxEntry } from '../dto/dnsmx-entry';
 import { validDnsNsEntry } from '../dto/dnsns-entry.spec';
 import { DnsNsEntry } from '../dto/dnsns-entry';
 import { CloudFlareFactory } from './cloud-flare.factory';
+import { ConsoleLoggerService } from '../logger.service';
 
 describe('CloudFlareFactory', () => {
   let sut: CloudFlareFactory;
@@ -21,6 +22,7 @@ describe('CloudFlareFactory', () => {
   const mockConfigServiceGetValues = {
     ENTRY_IDENTIFIER: paramEntryIdentifier,
   };
+  let mockConsoleLoggerService: DeepMocked<ConsoleLoggerService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -28,6 +30,8 @@ describe('CloudFlareFactory', () => {
     })
       .useMocker(createMock)
       .compile();
+
+    mockConsoleLoggerService = module.get(ConsoleLoggerService);
 
     sut = module.get<CloudFlareFactory>(CloudFlareFactory);
 
@@ -65,6 +69,14 @@ describe('CloudFlareFactory', () => {
     expect(mockConfigService.get).toHaveBeenCalledWith('ENTRY_IDENTIFIER', {
       infer: true,
     });
+    expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+    expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+      expect.objectContaining({
+        level: 'trace',
+        method: 'createOrUpdateARecordParams',
+        service: 'CloudFlareFactory',
+      }),
+    );
   });
 
   it('should convert DnsCnameEntry to CloudFlare CNAMERecord create params', () => {
@@ -87,6 +99,14 @@ describe('CloudFlareFactory', () => {
     expect(mockConfigService.get).toHaveBeenCalledWith('ENTRY_IDENTIFIER', {
       infer: true,
     });
+    expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+    expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+      expect.objectContaining({
+        level: 'trace',
+        method: 'createOrUpdateCNAMERecordParams',
+        service: 'CloudFlareFactory',
+      }),
+    );
   });
 
   it('should convert DnsMxEntry to CloudFlare MXRecord create params', () => {
@@ -109,6 +129,14 @@ describe('CloudFlareFactory', () => {
     expect(mockConfigService.get).toHaveBeenCalledWith('ENTRY_IDENTIFIER', {
       infer: true,
     });
+    expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+    expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+      expect.objectContaining({
+        level: 'trace',
+        method: 'createOrUpdateMXRecordParams',
+        service: 'CloudFlareFactory',
+      }),
+    );
   });
 
   it('should convert DnsNSEntry to CloudFlare NSRecord create params', () => {
@@ -130,5 +158,13 @@ describe('CloudFlareFactory', () => {
     expect(mockConfigService.get).toHaveBeenCalledWith('ENTRY_IDENTIFIER', {
       infer: true,
     });
+    expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+    expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+      expect.objectContaining({
+        level: 'trace',
+        method: 'createOrUpdateNSRecordParams',
+        service: 'CloudFlareFactory',
+      }),
+    );
   });
 });

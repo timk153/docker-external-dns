@@ -37,6 +37,7 @@
     "cloudflare": "^3.5.0",
     "dockerode": "^4.0.2",
     "joi": "^17.13.3",
+    "logger-decorator": "^1.8.1",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"
   },

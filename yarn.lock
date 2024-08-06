@@ -4378,6 +4378,13 @@ log-symbols@^4.1.0:
     chalk "^4.1.0"
     is-unicode-supported "^0.1.0"
 
+logger-decorator@^1.8.1:
+  version "1.8.1"
+  resolved "https://registry.yarnpkg.com/logger-decorator/-/logger-decorator-1.8.1.tgz#748ed76bfb03b67699fcf5255e7dfab9d50eb2e2"
+  integrity sha512-vdx5FCK1GzS9Y+4C9LngjMesgFUv4lwW6S0HmEr1SwM5NKwc7fx9MlHyjFG5jGf+18SZaGlgrysnl3UffPy3pw==
+  dependencies:
+    myrmidon "1.10.0"
+
 lru-cache@^10.2.0:
   version "10.3.0"
   resolved "https://registry.yarnpkg.com/lru-cache/-/lru-cache-10.3.0.tgz#4a4aaf10c84658ab70f79a85a9a3f1e1fb11196b"
@@ -4568,6 +4575,11 @@ mute-stream@1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-1.0.0.tgz#e31bd9fe62f0aed23520aa4324ea6671531e013e"
   integrity sha512-avsJQhyd+680gKXyG/sQc0nXaC6rBkPOfyHYcFb9+hdkqQkR9bdnkJ0AMZhke0oesPqIO+mFFJ+IdBc7mst4IA==
+
+myrmidon@1.10.0:
+  version "1.10.0"
+  resolved "https://registry.yarnpkg.com/myrmidon/-/myrmidon-1.10.0.tgz#6ea5841290acf64d309fc224ef60238b0dc7b525"
+  integrity sha512-leXQ36TUiGH8aCXuZVlguBc835bxJKrrJBp2KboB2O3nSVLo7Yu8lIaRuIJ2DrPQSuejmirDTyojCCx/QR5L+w==
 
 nan@^2.18.0, nan@^2.19.0:
   version "2.20.0"

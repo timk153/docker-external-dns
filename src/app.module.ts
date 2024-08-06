@@ -6,6 +6,7 @@ import { CloudFlareService } from './cloud-flare/cloud-flare.service';
 import { CloudFlareFactory } from './cloud-flare/cloud-flare.factory';
 import { AppService } from './app.service';
 import { CronService } from './cron/cron.service';
+import { ConsoleLoggerService } from './logger.service';
 
 /**
  * Module that loads the configuration and registers all the services and factories for the application
@@ -19,6 +20,7 @@ import { CronService } from './cron/cron.service';
     CloudFlareFactory,
     AppService,
     CronService,
+    ConsoleLoggerService,
   ],
 })
 export class AppModule {}

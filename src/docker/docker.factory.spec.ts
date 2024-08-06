@@ -1,7 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import Docker from 'dockerode';
+import { createMock, DeepMocked } from '@golevelup/ts-jest';
 import { NestedError } from '../errors/nested-error';
 import { DockerFactory } from './docker.factory';
+import { ConsoleLoggerService } from '../logger.service';
 
 jest.mock('dockerode');
 
@@ -10,6 +12,7 @@ const dockerMockValue = {} as Docker;
 
 describe('DockerFactory', () => {
   let sut: DockerFactory;
+  let mockConsoleLoggerService: DeepMocked<ConsoleLoggerService>;
 
   beforeAll(() => {
     dockerMock.mockReturnValue(dockerMockValue);
@@ -20,7 +23,11 @@ describe('DockerFactory', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [DockerFactory],
-    }).compile();
+    })
+      .useMocker(createMock)
+      .compile();
+
+    mockConsoleLoggerService = module.get(ConsoleLoggerService);
 
     sut = module.get<DockerFactory>(DockerFactory);
   });
@@ -37,6 +44,14 @@ describe('DockerFactory', () => {
       // assert
       expect(dockerMock).toHaveBeenCalledTimes(1);
       expect(result).toBe(dockerMockValue);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'trace',
+          method: 'get',
+          service: 'DockerFactory',
+        }),
+      );
     });
 
     it('should return the existing instance', () => {
@@ -63,6 +78,14 @@ describe('DockerFactory', () => {
 
       // act / assert
       expect(() => sut.get()).toThrow(error);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'error',
+          method: 'get',
+          service: 'DockerFactory',
+        }),
+      );
     });
   });
 });

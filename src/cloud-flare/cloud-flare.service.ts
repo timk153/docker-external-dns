@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Cloudflare from 'cloudflare';
 import { Zone } from 'cloudflare/resources/zones/zones';
@@ -11,6 +11,7 @@ import {
   RecordCreateParams,
   RecordUpdateParams,
 } from 'cloudflare/resources/dns/records';
+import { ConsoleLoggerService } from '../logger.service';
 import { DnsaCloudflareEntry } from '../dto/dnsa-cloudflare-entry';
 import { DnsCnameCloudflareEntry } from '../dto/dnscname-cloudflare-entry';
 import { DnsMxCloudflareEntry } from '../dto/dnsmx-cloudflare-entry';
@@ -18,6 +19,10 @@ import { DnsNsCloudflareEntry } from '../dto/dnsns-cloudflare-entry';
 import { DnsUnsupportedCloudFlareEntry } from '../dto/dnsunsupported-cloudflare-entry';
 import { DnsbaseEntry, DNSTypes, ICloudFlareEntry } from '../dto/dnsbase-entry';
 import { NestedError } from '../errors/nested-error';
+import { getLogClassDecorator } from '../utility.functions';
+
+let loggerPointer: ConsoleLoggerService;
+const LogDecorator = getLogClassDecorator(() => loggerPointer);
 
 /**
  * Possible states of the CloudFlare service
@@ -31,15 +36,19 @@ export enum State {
  * Behaviors associated with CloudFlare.
  * For example, creating, updating and deleting DNS records.
  */
+@LogDecorator()
 @Injectable()
 export class CloudFlareService {
-  private logger = new Logger(CloudFlareService.name);
-
   private state: State = State.Uninitialized;
 
   private cloudFlare: Cloudflare;
 
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private configService: ConfigService,
+    private loggerService: ConsoleLoggerService,
+  ) {
+    loggerPointer = this.loggerService;
+  }
 
   /**
    * Initializes the service.
@@ -121,7 +130,7 @@ export class CloudFlareService {
   ): { isSuccessful: boolean; zone?: Zone } {
     const result = zones.find(({ name }) => entry.name.endsWith(name));
     if (result === undefined) {
-      this.logger.warn(
+      this.loggerService.warn(
         `CloudFlareService, getZoneForEntry: No zone found for entry. (name: "${entry.name}", zones: "${JSON.stringify(zones.map((zone) => zone.name))}")`,
       );
       return { isSuccessful: false };
@@ -231,7 +240,7 @@ export class CloudFlareService {
           const entry = new DnsUnsupportedCloudFlareEntry();
           entry.type = DNSTypes.Unsupported;
           result = entry;
-          this.logger
+          this.loggerService
             .warn(`CloudFlareService, mapDNSEntries: Unsupported entry with id ${cloudFlareEntry.id} found. 
             It will be DELETED. Do not add the tracking comment to other DNS entries in CloudFlare!`);
         }

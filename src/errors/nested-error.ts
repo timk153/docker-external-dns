@@ -1,7 +1,11 @@
+import { getLogClassDecorator } from '../utility.functions';
+
+const LogDecorator = getLogClassDecorator();
 /**
  * Encapsulates an error and overrides the message.
  * Allows for nested error stacks.
  */
+@LogDecorator()
 export class NestedError<T extends Error> extends Error {
   constructor(
     message: string,

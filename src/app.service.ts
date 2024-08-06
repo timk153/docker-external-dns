@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, LoggerService } from '@nestjs/common';
 import { Record } from 'cloudflare/resources/dns/records';
 import { CloudFlareService } from './cloud-flare/cloud-flare.service';
 import { CloudFlareFactory } from './cloud-flare/cloud-flare.factory';
@@ -9,6 +9,11 @@ import { isDnsAEntry } from './dto/dnsa-entry';
 import { isDnsCnameEntry } from './dto/dnscname-entry';
 import { isDnsMxEntry } from './dto/dnsmx-entry';
 import { isDnsNsEntry } from './dto/dnsns-entry';
+import { getLogClassDecorator } from './utility.functions';
+import { ConsoleLoggerService } from './logger.service';
+
+let loggerPointer: LoggerService;
+const LogDecorator = getLogClassDecorator(() => loggerPointer);
 
 /**
  * Possible states of AppService
@@ -22,6 +27,7 @@ export enum State {
  * Behaviors to initialize the applications services and execute the synchronization between
  * the docker labels and CloudFlare.
  */
+@LogDecorator()
 @Injectable()
 export class AppService {
   private state = State.Uninitialized;
@@ -30,7 +36,10 @@ export class AppService {
     private cloudFlareService: CloudFlareService,
     private cloudFlareFactory: CloudFlareFactory,
     private dockerService: DockerService,
-  ) {}
+    private loggerService: ConsoleLoggerService,
+  ) {
+    loggerPointer = this.loggerService;
+  }
 
   /**
    * Initialize AppService.

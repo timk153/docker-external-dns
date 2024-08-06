@@ -1,4 +1,3 @@
-import { Logger } from '@nestjs/common';
 import { createMock, DeepMocked } from '@golevelup/ts-jest';
 import { Test, TestingModule } from '@nestjs/testing';
 import Docker from 'dockerode';
@@ -18,6 +17,7 @@ import { DnsaEntry } from '../dto/dnsa-entry';
 import { DnsCnameEntry } from '../dto/dnscname-entry';
 import { DnsMxEntry } from '../dto/dnsmx-entry';
 import { DnsNsEntry } from '../dto/dnsns-entry';
+import { ConsoleLoggerService } from '../logger.service';
 
 jest.mock('@nestjs/common', () => {
   const mock = jest.createMockFromModule('@nestjs/common') as any;
@@ -61,6 +61,7 @@ describe('DockerService', () => {
   let sut: DockerService;
   let mockDockerFactory: DeepMocked<DockerFactory>;
   let mockConfigService: DeepMocked<ConfigService>;
+  let mockConsoleLoggerService: DeepMocked<ConsoleLoggerService>;
   const mockDockerFactoryGetValue = createMock<Docker>();
   const mockDockerListContainersValue: Docker.ContainerInfo[] = [
     'container-info-1',
@@ -104,6 +105,8 @@ describe('DockerService', () => {
       (propertyPath) => mockConfigServiceGetValue[propertyPath],
     );
 
+    mockConsoleLoggerService = module.get(ConsoleLoggerService);
+
     sut = module.get<DockerService>(DockerService);
 
     jest.clearAllMocks();
@@ -134,6 +137,15 @@ describe('DockerService', () => {
       });
       expect(sut['dockerLabel']).toEqual(expectedDockerLabel);
       expect(sut['state']).toBe(States.Initialized);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'trace',
+          method: 'initialize',
+          service: 'DockerService',
+          params: '[]',
+        }),
+      );
     });
 
     it('should throw if initialize docker throws', () => {
@@ -152,6 +164,15 @@ describe('DockerService', () => {
       // act / assert
       expect(() => sut.initialize()).toThrow(error);
       expect(sut['state']).toBe(States.Unintialized);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'error',
+          method: 'initialize',
+          service: 'DockerService',
+          params: '[]',
+        }),
+      );
     });
 
     it('should throw if already initialized', () => {
@@ -165,6 +186,15 @@ describe('DockerService', () => {
       // act / assert
       expect(() => sut.initialize()).toThrow(error);
       expect(sut['state']).toBe(States.Initialized);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'error',
+          method: 'initialize',
+          service: 'DockerService',
+          params: '[]',
+        }),
+      );
     });
   });
 
@@ -188,6 +218,15 @@ describe('DockerService', () => {
         expect(mockDockerFactoryGetValue.listContainers).toHaveBeenCalledWith({
           filters: JSON.stringify({ label: [expectedDockerLabel] }),
         });
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+          expect.objectContaining({
+            level: 'trace',
+            method: 'getContainers',
+            service: 'DockerService',
+            params: '[]',
+          }),
+        );
       });
 
       it('should error if getContainers errors', async () => {
@@ -202,7 +241,16 @@ describe('DockerService', () => {
         );
 
         // act / assert
-        expect(async () => sut.getContainers()).rejects.toThrow(error);
+        await expect(async () => sut.getContainers()).rejects.toThrow(error);
+        expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+          expect.objectContaining({
+            level: 'error',
+            method: 'getContainers',
+            service: 'DockerService',
+            params: '[]',
+          }),
+        );
       });
 
       it('should error if not initialized', async () => {
@@ -213,7 +261,16 @@ describe('DockerService', () => {
         );
 
         // act / assert
-        expect(async () => sut.getContainers()).rejects.toThrow(error);
+        await expect(async () => sut.getContainers()).rejects.toThrow(error);
+        expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+          expect.objectContaining({
+            level: 'error',
+            method: 'getContainers',
+            service: 'DockerService',
+            params: '[]',
+          }),
+        );
       });
     });
 
@@ -280,12 +337,6 @@ describe('DockerService', () => {
         mockNsEntry,
       ];
 
-      let mockLogger: Logger;
-
-      beforeEach(() => {
-        mockLogger = sut['logger'];
-      });
-
       it('should deserialize successfully', () => {
         // arrange
         const paramContainers = [
@@ -306,7 +357,15 @@ describe('DockerService', () => {
 
         // act / assert
         expect(sut.extractDNSEntries(paramContainers)).toEqual(expected);
-        expect(mockLogger.warn).not.toHaveBeenCalled();
+        expect(mockConsoleLoggerService.warn).not.toHaveBeenCalled();
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+          expect.objectContaining({
+            level: 'trace',
+            method: 'extractDNSEntries',
+            service: 'DockerService',
+          }),
+        );
       });
 
       it('should warn and ignore all if two or more entries share the same unique identifier', () => {
@@ -367,12 +426,21 @@ describe('DockerService', () => {
         expect(sut.extractDNSEntries(paramContainers)).toEqual(expected);
 
         // assert
-        expect(mockLogger.warn).toHaveBeenCalledTimes(2);
+        expect(mockConsoleLoggerService.warn).toHaveBeenCalledTimes(2);
         expectedWarnings.forEach(({ containerIds, entries }) => {
-          expect(mockLogger.warn).toHaveBeenCalledWith(
+          expect(mockConsoleLoggerService.warn).toHaveBeenCalledWith(
             `DockerService, extractDNSEntries: containers with id's ${containerIds} have share duplicate entries for '${entries}'; all will be ignored`,
           );
         });
+        expect(mockConsoleLoggerService.error).not.toHaveBeenCalled();
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+          expect.objectContaining({
+            level: 'trace',
+            method: 'extractDNSEntries',
+            service: 'DockerService',
+          }),
+        );
       });
 
       it('should warn and ignore if type is Unsupported, but process other valid entries', () => {
@@ -391,8 +459,8 @@ describe('DockerService', () => {
         expect(sut.extractDNSEntries([mockUnsupportedContainerInfo])).toEqual([
           mockAEntry,
         ]);
-        expect(mockLogger.warn).toHaveBeenCalledTimes(1);
-        expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect(mockConsoleLoggerService.warn).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.warn).toHaveBeenCalledWith(
           `DockerService, extractDNSEntries: container with id ${mockUnsupportedContainerInfo.Id} is using 'Unsupported' type, it will be ignored`,
         );
       });
@@ -411,8 +479,8 @@ describe('DockerService', () => {
 
           // assert
           expect(result).toStrictEqual(createMockContainersDefaultValidResult);
-          expect(mockLogger.warn).toHaveBeenCalledTimes(1);
-          expect(mockLogger.warn).toHaveBeenCalledWith(
+          expect(mockConsoleLoggerService.warn).toHaveBeenCalledTimes(1);
+          expect(mockConsoleLoggerService.warn).toHaveBeenCalledWith(
             `DockerService, extractDNSEntries: container with id ${mockContainerInfo.Id} has a non JSON formatted label`,
           );
         },
@@ -443,8 +511,8 @@ describe('DockerService', () => {
 
           // assert
           expect(result).toStrictEqual(createMockContainersDefaultValidResult);
-          expect(mockLogger.warn).toHaveBeenCalledTimes(1);
-          expect(mockLogger.warn).toHaveBeenCalledWith(
+          expect(mockConsoleLoggerService.warn).toHaveBeenCalledTimes(1);
+          expect(mockConsoleLoggerService.warn).toHaveBeenCalledWith(
             `DockerService, extractDNSEntries: container with id ${mockContainerInfo.Id} has an unrecognised shape, check the values`,
           );
         },
@@ -464,8 +532,8 @@ describe('DockerService', () => {
 
           // assert
           expect(result).toStrictEqual(createMockContainersDefaultValidResult);
-          expect(mockLogger.warn).toHaveBeenCalledTimes(1);
-          expect(mockLogger.warn).toHaveBeenCalledWith(
+          expect(mockConsoleLoggerService.warn).toHaveBeenCalledTimes(1);
+          expect(mockConsoleLoggerService.warn).toHaveBeenCalledWith(
             `DockerService, extractDNSEntries: container with id ${mockContainerInfo.Id} has empty array for a label and has been ignored`,
           );
         },
@@ -493,8 +561,8 @@ describe('DockerService', () => {
           expect(result).toStrictEqual(
             createMockContainersDefaultValidMultiLabelResult,
           );
-          expect(mockLogger.warn).toHaveBeenCalledTimes(1);
-          expect(mockLogger.warn).toHaveBeenCalledWith(
+          expect(mockConsoleLoggerService.warn).toHaveBeenCalledTimes(1);
+          expect(mockConsoleLoggerService.warn).toHaveBeenCalledWith(
             `DockerService, extractDNSEntries: container with id ${mockContainerInfo.Id} has an unrecognised shape, check the values`,
           );
         },
@@ -518,8 +586,8 @@ describe('DockerService', () => {
         expect(result).toEqual(
           createMockContainersDefaultValidMultiLabelResult,
         );
-        expect(mockLogger.warn).toHaveBeenCalledTimes(1);
-        expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect(mockConsoleLoggerService.warn).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.warn).toHaveBeenCalledWith(
           `DockerService, extractDNSEntries: container with id ${mockContainerInfo.Id} has validation errors`,
           expect.arrayContaining([
             expect.objectContaining({
@@ -552,8 +620,8 @@ describe('DockerService', () => {
         expect(result).toStrictEqual(
           createMockContainersDefaultValidMultiLabelResult,
         );
-        expect(mockLogger.warn).toHaveBeenCalledTimes(1);
-        expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect(mockConsoleLoggerService.warn).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.warn).toHaveBeenCalledWith(
           `DockerService, extractDNSEntries: container with id ${mockContainerInfo.Id} has 'id' within it's JSON label, please remove it`,
         );
       });
@@ -568,6 +636,14 @@ describe('DockerService', () => {
         // act / assert
         expect(() => sut.extractDNSEntries([mockAContainerInfo])).toThrow(
           error,
+        );
+        expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+          expect.objectContaining({
+            level: 'error',
+            method: 'extractDNSEntries',
+            service: 'DockerService',
+          }),
         );
       });
     });

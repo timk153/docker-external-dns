@@ -4,6 +4,7 @@ import { setInterval, clearInterval } from 'timers';
 import { ConfigService } from '@nestjs/config';
 import { AppService } from '../app.service';
 import { CronService, State } from './cron.service';
+import { ConsoleLoggerService } from '../logger.service';
 
 jest.mock('timers');
 
@@ -18,6 +19,7 @@ describe('CronService', () => {
   let sut: CronService;
   let mockConfigService: DeepMocked<ConfigService>;
   let mockAppService: DeepMocked<AppService>;
+  let mockConsoleLoggerService: DeepMocked<ConsoleLoggerService>;
   const envExecutionFrequencySeconds = 9999;
 
   beforeEach(async () => {
@@ -40,6 +42,8 @@ describe('CronService', () => {
       AppService,
     ) as DeepMocked<AppService>;
 
+    mockConsoleLoggerService = module.get(ConsoleLoggerService);
+
     sut = module.get<CronService>(CronService);
   });
 
@@ -55,6 +59,14 @@ describe('CronService', () => {
 
       // act / assert
       expect(() => sut.start()).toThrow(expected);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'error',
+          method: 'start',
+          service: 'CronService',
+        }),
+      );
     });
 
     it('should execute "synchronise" at regular intervals', async () => {
@@ -89,6 +101,7 @@ describe('CronService', () => {
 
       // assert
       expect(mockAppService.synchronise).toHaveBeenCalledTimes(2);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -100,6 +113,14 @@ describe('CronService', () => {
 
       // act / asse;rt
       expect(() => sut.stop()).toThrow(expected);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'error',
+          method: 'stop',
+          service: 'CronService',
+        }),
+      );
     });
 
     it('should stop the execution loop', async () => {
@@ -114,6 +135,14 @@ describe('CronService', () => {
       expect(mockClearInterval).toHaveBeenCalledTimes(1);
       expect(mockClearInterval).toHaveBeenCalledWith(mockSetIntervalValue);
       expect(sut['state']).toEqual(State.Stopped);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'trace',
+          method: 'stop',
+          service: 'CronService',
+        }),
+      );
     });
   });
 
@@ -127,6 +156,14 @@ describe('CronService', () => {
 
       // assert
       expect(spyStop).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'trace',
+          method: 'onModuleDestroy',
+          service: 'CronService',
+        }),
+      );
 
       // clean up
       spyStop.mockRestore();

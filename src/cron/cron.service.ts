@@ -2,12 +2,18 @@ import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { setInterval, clearInterval } from 'timers';
 import { AppService } from '../app.service';
+import { getLogClassDecorator } from '../utility.functions';
+import { ConsoleLoggerService } from '../logger.service';
+
+let loggerPointer: ConsoleLoggerService;
+const LogDecorator = getLogClassDecorator(() => loggerPointer);
 
 export enum State {
   Stopped,
   Started,
 }
 
+@LogDecorator()
 @Injectable()
 export class CronService implements OnModuleDestroy {
   private state = State.Stopped;
@@ -17,7 +23,10 @@ export class CronService implements OnModuleDestroy {
   constructor(
     private configService: ConfigService,
     private appService: AppService,
-  ) {}
+    private loggerService: ConsoleLoggerService,
+  ) {
+    loggerPointer = this.loggerService;
+  }
 
   /**
    * Starts the CRON Job executing.

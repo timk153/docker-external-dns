@@ -32,8 +32,8 @@ import {
   Zone,
   ZonesV4PagePaginationArray,
 } from 'cloudflare/resources/zones/zones';
-import { Logger } from '@nestjs/common';
 import each from 'jest-each';
+import { ConsoleLoggerService } from '../logger.service';
 import { DnsaEntry } from '../dto/dnsa-entry';
 import { DnsCnameEntry } from '../dto/dnscname-entry';
 import { DnsMxEntry } from '../dto/dnsmx-entry';
@@ -139,12 +139,11 @@ class CloudFlareDNSRecordBuilder<T extends Cloudflare.DNS.Records.Record> {
 describe('CloudFlareService', () => {
   let sut: CloudFlareService;
   let mockConfigService: DeepMocked<ConfigService>;
+  let mockConsoleLoggerService: DeepMocked<ConsoleLoggerService>;
   const mockConfigServiceGetValues = {
     API_TOKEN: 'api-token',
     ENTRY_IDENTIFIER: 'project-label:instance-id',
   };
-
-  let mockLogger: Logger;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -152,6 +151,8 @@ describe('CloudFlareService', () => {
     })
       .useMocker(createMock)
       .compile();
+
+    mockConsoleLoggerService = module.get(ConsoleLoggerService);
 
     sut = module.get<CloudFlareService>(CloudFlareService);
 
@@ -161,8 +162,6 @@ describe('CloudFlareService', () => {
     mockConfigService.get.mockImplementation(
       (property) => mockConfigServiceGetValues[property],
     );
-
-    mockLogger = sut['logger'];
   });
 
   it('should be defined', () => {
@@ -180,6 +179,14 @@ describe('CloudFlareService', () => {
       // act / assert
       expect(() => sut.initialize()).toThrow(expected);
       expect(sut['state']).toBe(State.Initialized);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'error',
+          method: 'initialize',
+          service: 'CloudFlareService',
+        }),
+      );
     });
 
     it('should initialize cloudflare and set state to initialized', () => {
@@ -199,6 +206,14 @@ describe('CloudFlareService', () => {
         apiToken: mockConfigServiceGetValues.API_TOKEN,
       });
       expect(sut['state']).toBe(State.Initialized);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'trace',
+          method: 'initialize',
+          service: 'CloudFlareService',
+        }),
+      );
     });
   });
 
@@ -224,6 +239,14 @@ describe('CloudFlareService', () => {
 
       // act / assert
       await expect(sut.getZones()).rejects.toThrow(expected);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'error',
+          method: 'getZones',
+          service: 'CloudFlareService',
+        }),
+      );
     });
 
     it('should error if cloudflare throws', async () => {
@@ -238,6 +261,14 @@ describe('CloudFlareService', () => {
 
       // act / assert
       await expect(sut.getZones()).rejects.toThrow(expected);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'error',
+          method: 'getZones',
+          service: 'CloudFlareService',
+        }),
+      );
     });
 
     it('should return DNS zones', async () => {
@@ -264,6 +295,14 @@ describe('CloudFlareService', () => {
       expect(mockZoneListValue.getNextPage).not.toHaveBeenCalled();
       expect(mockZoneListValue.getPaginatedItems).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockResults);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'trace',
+          method: 'getZones',
+          service: 'CloudFlareService',
+        }),
+      );
     });
 
     it('should return paginated DNS zones', async () => {
@@ -344,7 +383,15 @@ describe('CloudFlareService', () => {
           isSuccessful: true,
           zone: expected,
         });
-        expect(mockLogger.warn).not.toHaveBeenCalled();
+        expect(mockConsoleLoggerService.warn).not.toHaveBeenCalled();
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+          expect.objectContaining({
+            level: 'trace',
+            method: 'getZoneForEntry',
+            service: 'CloudFlareService',
+          }),
+        );
       },
     );
 
@@ -357,9 +404,17 @@ describe('CloudFlareService', () => {
       expect(sut.getZoneForEntry(paramZones, paramEntry)).toEqual({
         isSuccessful: false,
       });
-      expect(mockLogger.warn).toHaveBeenCalledTimes(1);
-      expect(mockLogger.warn).toHaveBeenCalledWith(
+      expect(mockConsoleLoggerService.warn).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.warn).toHaveBeenCalledWith(
         `CloudFlareService, getZoneForEntry: No zone found for entry. (name: "${paramEntry.name}", zones: "${JSON.stringify(paramZones.map((zone) => zone.name))}")`,
+      );
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'trace',
+          method: 'getZoneForEntry',
+          service: 'CloudFlareService',
+        }),
       );
     });
   });
@@ -390,6 +445,14 @@ describe('CloudFlareService', () => {
 
       // act / assert
       await expect(sut.getDNSEntries(paramZoneId)).rejects.toThrow(expected);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'error',
+          method: 'getDNSEntries',
+          service: 'CloudFlareService',
+        }),
+      );
     });
 
     it('should error if cloudflare throws', async () => {
@@ -404,6 +467,14 @@ describe('CloudFlareService', () => {
 
       // act / assert
       await expect(sut.getDNSEntries(paramZoneId)).rejects.toThrow(expected);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'error',
+          method: 'getDNSEntries',
+          service: 'CloudFlareService',
+        }),
+      );
     });
 
     it('should return dns records', async () => {
@@ -440,6 +511,14 @@ describe('CloudFlareService', () => {
       expect(mockRecordListValue.getNextPage).not.toHaveBeenCalled();
       expect(mockRecordListValue.getPaginatedItems).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockResults);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'trace',
+          method: 'getDNSEntries',
+          service: 'CloudFlareService',
+        }),
+      );
     });
 
     it('should return paginated dns records', async () => {
@@ -588,10 +667,20 @@ describe('CloudFlareService', () => {
 
         // assert
         expect(result).toEqual(mockDNSEntries);
-        expect(mockLogger.warn).toHaveBeenCalledTimes(warnMessages.length);
+        expect(mockConsoleLoggerService.warn).toHaveBeenCalledTimes(
+          warnMessages.length,
+        );
         warnMessages.forEach((message) => {
-          expect(mockLogger.warn).toHaveBeenCalledWith(message);
+          expect(mockConsoleLoggerService.warn).toHaveBeenCalledWith(message);
         });
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+          expect.objectContaining({
+            level: 'trace',
+            method: 'mapDNSEntries',
+            service: 'CloudFlareService',
+          }),
+        );
       });
     });
 
@@ -603,9 +692,17 @@ describe('CloudFlareService', () => {
         { type: 'NS' } as RecordCreateParams.NSRecord,
       ]).it('should create DNS entry', async (paramEntry) => {
         // act / assert
-        await expect(sut.createEntry(paramEntry)).resolves;
+        await sut.createEntry(paramEntry);
         expect(mockRecords.create).toHaveBeenCalledTimes(1);
         expect(mockRecords.create).toHaveBeenCalledWith(paramEntry);
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+          expect.objectContaining({
+            level: 'trace',
+            method: 'createEntry',
+            service: 'CloudFlareService',
+          }),
+        );
       });
 
       it('should fail creating DNS entry', async () => {
@@ -623,6 +720,14 @@ describe('CloudFlareService', () => {
 
         // act / assert
         await expect(sut.createEntry(paramEntry)).rejects.toThrow(expected);
+        expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+          expect.objectContaining({
+            level: 'error',
+            method: 'createEntry',
+            service: 'CloudFlareService',
+          }),
+        );
       });
     });
 
@@ -636,11 +741,19 @@ describe('CloudFlareService', () => {
         { type: 'NS' } as RecordUpdateParams.NSRecord,
       ]).it('should update DNS entry', async (paramEntry) => {
         // act / assert
-        await expect(sut.updateEntry(paramEntryId, paramEntry)).resolves;
+        await sut.updateEntry(paramEntryId, paramEntry);
         expect(mockRecords.update).toHaveBeenCalledTimes(1);
         expect(mockRecords.update).toHaveBeenCalledWith(
           paramEntryId,
           paramEntry,
+        );
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+          expect.objectContaining({
+            level: 'trace',
+            method: 'updateEntry',
+            service: 'CloudFlareService',
+          }),
         );
       });
 
@@ -661,6 +774,14 @@ describe('CloudFlareService', () => {
         await expect(sut.updateEntry(paramEntryId, paramEntry)).rejects.toThrow(
           expected,
         );
+        expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+          expect.objectContaining({
+            level: 'error',
+            method: 'updateEntry',
+            service: 'CloudFlareService',
+          }),
+        );
       });
     });
 
@@ -669,11 +790,19 @@ describe('CloudFlareService', () => {
 
       it('should delete DNS entry', async () => {
         // act / assert
-        await expect(sut.deleteEntry(paramRecordId, paramZoneId)).resolves;
+        await sut.deleteEntry(paramRecordId, paramZoneId);
         expect(mockRecords.delete).toHaveBeenCalledTimes(1);
         expect(mockRecords.delete).toHaveBeenCalledWith(paramRecordId, {
           zone_id: paramZoneId,
         });
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+          expect.objectContaining({
+            level: 'trace',
+            method: 'deleteEntry',
+            service: 'CloudFlareService',
+          }),
+        );
       });
 
       it('should fail deleting DNS entry', async () => {
@@ -689,6 +818,14 @@ describe('CloudFlareService', () => {
         await expect(
           sut.deleteEntry(paramRecordId, paramZoneId),
         ).rejects.toThrow(expected);
+        expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+          expect.objectContaining({
+            level: 'error',
+            method: 'deleteEntry',
+            service: 'CloudFlareService',
+          }),
+        );
       });
     });
   });

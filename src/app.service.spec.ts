@@ -15,6 +15,7 @@ import { isDnsAEntry } from './dto/dnsa-entry';
 import { isDnsCnameEntry } from './dto/dnscname-entry';
 import { isDnsMxEntry } from './dto/dnsmx-entry';
 import { isDnsNsEntry } from './dto/dnsns-entry';
+import { ConsoleLoggerService } from './logger.service';
 
 jest.mock('./app.functions');
 jest.mock('./dto/dnsa-entry', () => {
@@ -159,6 +160,7 @@ describe('AppService', () => {
 
   let mockCloudFlareService: DeepMocked<CloudFlareService>;
   let mockCloudFlareFactory: DeepMocked<CloudFlareFactory>;
+  let mockConsoleLoggerService: DeepMocked<ConsoleLoggerService>;
 
   beforeAll(() => {
     mockAppFunctionsComputeSetDifference.mockReturnValue(
@@ -212,6 +214,8 @@ describe('AppService', () => {
       mockCloudFlareFactoryCreateOrUpdateNSRecordParamsValue,
     );
 
+    mockConsoleLoggerService = module.get(ConsoleLoggerService);
+
     sut = module.get<AppService>(AppService);
 
     jest.clearAllMocks();
@@ -234,6 +238,15 @@ describe('AppService', () => {
       expect(mockCloudFlareService.initialize).toHaveBeenCalledTimes(1);
       expect(mockDockerService.initialize).toHaveBeenCalledTimes(1);
       expect(sut['state']).toBe(State.Initialized);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'trace',
+          method: 'initialize',
+          service: 'AppService',
+          params: '[]',
+        }),
+      );
     });
 
     it('should error if cloud-flare.service errors', () => {
@@ -246,6 +259,16 @@ describe('AppService', () => {
       // act / assert
       expect(() => sut.initialize()).toThrow(error);
       expect(sut['state']).toBe(State.Uninitialized);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'error',
+          error: error.stack,
+          method: 'initialize',
+          service: 'AppService',
+          params: '[]',
+        }),
+      );
     });
 
     it('should error if docker.service errors', () => {
@@ -258,6 +281,16 @@ describe('AppService', () => {
       // act / assert
       expect(() => sut.initialize()).toThrow(error);
       expect(sut['state']).toBe(State.Uninitialized);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'error',
+          error: error.stack,
+          method: 'initialize',
+          service: 'AppService',
+          params: '[]',
+        }),
+      );
     });
   });
 
@@ -296,6 +329,15 @@ describe('AppService', () => {
 
       // act / assert
       await expect(sut.synchronise()).rejects.toThrow(expected);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'error',
+          method: 'synchronise',
+          service: 'AppService',
+          params: '[]',
+        }),
+      );
     });
 
     it('should synchronize', async () => {
@@ -420,6 +462,15 @@ describe('AppService', () => {
           zoneId,
         );
       });
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'trace',
+          method: 'synchronise',
+          service: 'AppService',
+          params: '[]',
+        }),
+      );
     });
   });
 
@@ -489,6 +540,15 @@ describe('AppService', () => {
         uncalled.forEach((uncalledMock) => {
           expect(uncalledMock).not.toHaveBeenCalled();
         });
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+          expect.objectContaining({
+            level: 'trace',
+            method: 'getCloudFlareRecordParameters',
+            service: 'AppService',
+            params: `[ '${paramZoneId}', {} ]`,
+          }),
+        );
 
         // clean up
         jest.clearAllMocks();
@@ -509,6 +569,15 @@ describe('AppService', () => {
       expect(() =>
         sut['getCloudFlareRecordParameters'](paramZoneId, paramEntryInvalid),
       ).toThrow(expected);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'error',
+          method: 'getCloudFlareRecordParameters',
+          service: 'AppService',
+          params: `[ '${paramZoneId}', { type: 4 } ]`,
+        }),
+      );
     });
   });
 });

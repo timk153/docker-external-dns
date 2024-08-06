@@ -1,10 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import Docker from 'dockerode';
 import { NestedError } from '../errors/nested-error';
+import { getLogClassDecorator } from '../utility.functions';
+import { ConsoleLoggerService } from '../logger.service';
 
+let loggerPointer: ConsoleLoggerService;
+const LogDecorator = getLogClassDecorator(() => loggerPointer);
+
+@LogDecorator()
 @Injectable()
 export class DockerFactory {
   private docker: Docker;
+
+  constructor(private loggerService: ConsoleLoggerService) {
+    loggerPointer = this.loggerService;
+  }
 
   /**
    * Initializes Docker as a singleton.

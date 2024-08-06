@@ -1,8 +1,9 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, LoggerService } from '@nestjs/common';
 import Docker from 'dockerode';
 import { ConfigService } from '@nestjs/config';
 import { validateSync } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
+import { ConsoleLoggerService } from '../logger.service';
 import { DnsCnameEntry } from '../dto/dnscname-entry';
 import { DnsMxEntry } from '../dto/dnsmx-entry';
 import { DnsNsEntry } from '../dto/dnsns-entry';
@@ -12,6 +13,10 @@ import { NestedError } from '../errors/nested-error';
 import { DockerFactory } from './docker.factory';
 import { DnsaEntry } from '../dto/dnsa-entry';
 import { DnsBaseCloudflareEntry } from '../dto/dnsbase-entry.spec';
+import { getLogClassDecorator } from '../utility.functions';
+
+let loggerPointer: LoggerService;
+const LogDecorator = getLogClassDecorator(() => loggerPointer);
 
 /**
  * Possibe states of the docker service
@@ -29,10 +34,9 @@ export enum States {
  * - Querying for containers with labels based on our criteria
  * - Deserializing and validating the JSON labels
  */
+@LogDecorator()
 @Injectable()
 export class DockerService {
-  private logger = new Logger(DockerService.name);
-
   private docker: Docker;
 
   private dockerLabel: string;
@@ -42,7 +46,10 @@ export class DockerService {
   constructor(
     @Inject() private readonly dockerFactory: DockerFactory,
     @Inject() private readonly configService: ConfigService<IConfiguration>,
-  ) {}
+    private loggerService: ConsoleLoggerService,
+  ) {
+    loggerPointer = this.loggerService;
+  }
 
   /**
    * Initializes the class by fetching the docker instance
@@ -120,20 +127,20 @@ export class DockerService {
           current.Labels[this.dockerLabel],
         ) as DnsBaseCloudflareEntry[];
         if (!Array.isArray(entries)) {
-          this.logger.warn(
+          this.loggerService.warn(
             `DockerService, extractDNSEntries: container with id ${current.Id} has an unrecognised shape, check the values`,
           );
           return;
         }
         if (entries.length === 0) {
-          this.logger.warn(
+          this.loggerService.warn(
             `DockerService, extractDNSEntries: container with id ${current.Id} has empty array for a label and has been ignored`,
           );
           return;
         }
         entries.forEach((entry) => {
           if (entry.id !== undefined) {
-            this.logger.warn(
+            this.loggerService.warn(
               `DockerService, extractDNSEntries: container with id ${current.Id} has 'id' within it's JSON label, please remove it`,
             );
             return;
@@ -154,12 +161,12 @@ export class DockerService {
               instance = plainToInstance(DnsNsEntry, entry);
               break;
             case DNSTypes.Unsupported:
-              this.logger.warn(
+              this.loggerService.warn(
                 `DockerService, extractDNSEntries: container with id ${current.Id} is using 'Unsupported' type, it will be ignored`,
               );
               return;
             default:
-              this.logger.warn(
+              this.loggerService.warn(
                 `DockerService, extractDNSEntries: container with id ${current.Id} has an unrecognised shape, check the values`,
               );
               return;
@@ -168,7 +175,7 @@ export class DockerService {
           const errors = validateSync(instance);
           // warn and ignore if any errors
           if (errors.length !== 0) {
-            this.logger.warn(
+            this.loggerService.warn(
               `DockerService, extractDNSEntries: container with id ${current.Id} has validation errors`,
               errors,
             );
@@ -198,7 +205,7 @@ export class DockerService {
         });
       } catch (error) {
         // failed to parse the JSON
-        this.logger.warn(
+        this.loggerService.warn(
           `DockerService, extractDNSEntries: container with id ${current.Id} has a non JSON formatted label`,
         );
       }
@@ -212,7 +219,7 @@ export class DockerService {
         type: entries[0].dns.type,
         name: entries[0].dns.name,
       });
-      this.logger.warn(
+      this.loggerService.warn(
         `DockerService, extractDNSEntries: containers with id's ${containerIds} have share duplicate entries for '${conflictingIdentity}'; all will be ignored`,
       );
     });
