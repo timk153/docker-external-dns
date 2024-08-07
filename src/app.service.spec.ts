@@ -462,10 +462,10 @@ describe('AppService', () => {
           zoneId,
         );
       });
-      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
-      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+      expect(mockConsoleLoggerService.debug).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.debug).toHaveBeenCalledWith(
         expect.objectContaining({
-          level: 'trace',
+          level: 'debug',
           method: 'synchronise',
           service: 'AppService',
           params: '[]',

@@ -295,10 +295,10 @@ describe('CloudFlareService', () => {
       expect(mockZoneListValue.getNextPage).not.toHaveBeenCalled();
       expect(mockZoneListValue.getPaginatedItems).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockResults);
-      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
-      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+      expect(mockConsoleLoggerService.debug).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.debug).toHaveBeenCalledWith(
         expect.objectContaining({
-          level: 'trace',
+          level: 'debug',
           method: 'getZones',
           service: 'CloudFlareService',
         }),
@@ -511,10 +511,10 @@ describe('CloudFlareService', () => {
       expect(mockRecordListValue.getNextPage).not.toHaveBeenCalled();
       expect(mockRecordListValue.getPaginatedItems).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockResults);
-      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
-      expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+      expect(mockConsoleLoggerService.debug).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.debug).toHaveBeenCalledWith(
         expect.objectContaining({
-          level: 'trace',
+          level: 'debug',
           method: 'getDNSEntries',
           service: 'CloudFlareService',
         }),
@@ -695,10 +695,10 @@ describe('CloudFlareService', () => {
         await sut.createEntry(paramEntry);
         expect(mockRecords.create).toHaveBeenCalledTimes(1);
         expect(mockRecords.create).toHaveBeenCalledWith(paramEntry);
-        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
-        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+        expect(mockConsoleLoggerService.debug).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.debug).toHaveBeenCalledWith(
           expect.objectContaining({
-            level: 'trace',
+            level: 'debug',
             method: 'createEntry',
             service: 'CloudFlareService',
           }),
@@ -747,10 +747,10 @@ describe('CloudFlareService', () => {
           paramEntryId,
           paramEntry,
         );
-        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
-        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+        expect(mockConsoleLoggerService.debug).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.debug).toHaveBeenCalledWith(
           expect.objectContaining({
-            level: 'trace',
+            level: 'debug',
             method: 'updateEntry',
             service: 'CloudFlareService',
           }),
@@ -795,10 +795,10 @@ describe('CloudFlareService', () => {
         expect(mockRecords.delete).toHaveBeenCalledWith(paramRecordId, {
           zone_id: paramZoneId,
         });
-        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
-        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+        expect(mockConsoleLoggerService.debug).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.debug).toHaveBeenCalledWith(
           expect.objectContaining({
-            level: 'trace',
+            level: 'debug',
             method: 'deleteEntry',
             service: 'CloudFlareService',
           }),

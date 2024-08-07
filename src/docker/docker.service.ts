@@ -108,6 +108,7 @@ export class DockerService {
    * @returns {DnsbaseEntry[]} deserialized labels
    * @throws {Error} If serivce hasn't been initialized
    */
+  @LogDecorator({ level: 'debug' })
   extractDNSEntries(containers: Docker.ContainerInfo[]): DnsbaseEntry[] {
     if (this.state !== States.Initialized)
       throw new Error(

@@ -57,6 +57,7 @@ export class AppService {
    * Computes additions, updates, deletions and unchanged.
    * Adds, Updates and Deletes entries from CloudFlare.
    */
+  @LogDecorator({ level: 'debug' })
   async synchronise() {
     if (this.state === State.Uninitialized)
       throw new Error(

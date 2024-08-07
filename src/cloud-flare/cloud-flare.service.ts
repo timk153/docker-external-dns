@@ -74,6 +74,7 @@ export class CloudFlareService {
    * Fetches from CloudFlare all the zones that can be read
    * @returns {Promise<Zone[]>} Promise which resolves to all the accessible CloudFlare Zones
    */
+  @LogDecorator({ level: 'debug' })
   async getZones(): Promise<Zone[]> {
     if (this.state === State.Uninitialized)
       throw Error(
@@ -145,6 +146,7 @@ export class CloudFlareService {
    * @throws {Error} If service isn't initialized.
    * @throws {NestedError} If CloudFlare errors fetching DNS records.
    */
+  @LogDecorator({ level: 'debug' })
   async getDNSEntries(zoneId: string): Promise<Cloudflare.DNS.Record[]> {
     if (this.state === State.Uninitialized)
       throw Error(
@@ -258,6 +260,7 @@ export class CloudFlareService {
    * @param entry The entry to create
    * @throws {NestedError} if CloudFlare errors creating the entry
    */
+  @LogDecorator({ level: 'debug' })
   async createEntry(
     entry:
       | RecordCreateParams.ARecord
@@ -281,6 +284,7 @@ export class CloudFlareService {
    * @param entry The entry to be updated
    * @throws {NestedError} if CloudFlare errors updating the entry
    */
+  @LogDecorator({ level: 'debug' })
   async updateEntry(
     recordId: string,
     entry:
@@ -305,6 +309,7 @@ export class CloudFlareService {
    * @param zoneId Zone the record belongs to
    * @throws {NestedError} if CloudFlare errors deleteing the entry
    */
+  @LogDecorator({ level: 'debug' })
   async deleteEntry(recordId: string, zoneId: string): Promise<void> {
     try {
       await this.cloudFlare.dns.records.delete(recordId, { zone_id: zoneId });

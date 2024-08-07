@@ -358,10 +358,10 @@ describe('DockerService', () => {
         // act / assert
         expect(sut.extractDNSEntries(paramContainers)).toEqual(expected);
         expect(mockConsoleLoggerService.warn).not.toHaveBeenCalled();
-        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
-        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+        expect(mockConsoleLoggerService.debug).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.debug).toHaveBeenCalledWith(
           expect.objectContaining({
-            level: 'trace',
+            level: 'debug',
             method: 'extractDNSEntries',
             service: 'DockerService',
           }),
@@ -433,10 +433,10 @@ describe('DockerService', () => {
           );
         });
         expect(mockConsoleLoggerService.error).not.toHaveBeenCalled();
-        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
-        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+        expect(mockConsoleLoggerService.debug).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.debug).toHaveBeenCalledWith(
           expect.objectContaining({
-            level: 'trace',
+            level: 'debug',
             method: 'extractDNSEntries',
             service: 'DockerService',
           }),
