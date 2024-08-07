@@ -340,6 +340,25 @@ describe('AppService', () => {
       );
     });
 
+    it('should throw if no zones', async () => {
+      // arrange
+      mockCloudFlareService.getZones.mockResolvedValueOnce([]);
+
+      // act / assert
+      await expect(sut.synchronise()).rejects.toThrow(
+        'AppService, synchronize: No zones returned from CloudFlare. Check API Token has Zone access and you have zones registered to your account',
+      );
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'error',
+          method: 'synchronise',
+          service: 'AppService',
+          params: '[]',
+        }),
+      );
+    });
+
     it('should synchronize', async () => {
       // act
       await sut.synchronise();

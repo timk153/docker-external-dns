@@ -66,6 +66,10 @@ export class AppService {
 
     // get cloudflare zones
     const zones = await this.cloudFlareService.getZones();
+    if (zones.length === 0)
+      throw new Error(
+        'AppService, synchronize: No zones returned from CloudFlare. Check API Token has Zone access and you have zones registered to your account',
+      );
     // for each zone, get the zones records
     const zoneRecords = {} as { [key: string]: Record[] };
     const zoneRecordPromises = zones.map(
