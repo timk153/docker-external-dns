@@ -98,10 +98,12 @@ export class AppService {
       cloudFlareEntries,
     );
     // prepare requests to add, update and delete
+    let addedZoneCount = 0;
     const requests = [
       ...setDifference.add.map(async (entry) => {
         const zone = this.cloudFlareService.getZoneForEntry(zones, entry);
         if (!zone.isSuccessful || !zone.zone) return Promise.reject;
+        addedZoneCount += 1;
         const parameter = this.getCloudFlareRecordParameters(
           zone.zone.id,
           entry,
@@ -120,6 +122,9 @@ export class AppService {
       ),
     ];
     await Promise.all(requests);
+    this.loggerService.log(
+      `Synchronisation complete, entries changed: Added ${addedZoneCount}, Updated ${setDifference.update.length}, Deleted ${setDifference.delete.length}, Unchanged ${setDifference.unchanged.length}`,
+    );
   }
 
   /**

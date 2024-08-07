@@ -471,6 +471,10 @@ describe('AppService', () => {
           params: '[]',
         }),
       );
+      expect(mockConsoleLoggerService.log).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.log).toHaveBeenCalledWith(
+        `Synchronisation complete, entries changed: Added 4, Updated 4, Deleted 2, Unchanged 1`,
+      );
     });
   });
 

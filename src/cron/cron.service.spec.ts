@@ -78,6 +78,10 @@ describe('CronService', () => {
       sut.start();
 
       // assert
+      expect(mockConsoleLoggerService.log).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.log).toHaveBeenCalledWith(
+        `Staring CRON job, execution frequency is every ${envExecutionFrequencySeconds} seconds`,
+      );
       expect(mockConfigService.get).toHaveBeenCalledTimes(1);
       expect(mockConfigService.get).toHaveBeenCalledWith(
         'EXECUTION_FREQUENCY_SECONDS',
@@ -132,6 +136,10 @@ describe('CronService', () => {
       sut.stop();
 
       // assert
+      expect(mockConsoleLoggerService.log).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLoggerService.log).toHaveBeenCalledWith(
+        'Stopping CRON job',
+      );
       expect(mockClearInterval).toHaveBeenCalledTimes(1);
       expect(mockClearInterval).toHaveBeenCalledWith(mockSetIntervalValue);
       expect(sut['state']).toEqual(State.Stopped);

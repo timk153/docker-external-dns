@@ -43,6 +43,9 @@ export class CronService implements OnModuleDestroy {
         infer: true,
       },
     );
+    this.loggerService.log(
+      `Staring CRON job, execution frequency is every ${interval} seconds`,
+    );
     this.appService.synchronise();
     this.startedIntervalToken = setInterval(() => {
       this.appService.synchronise();
@@ -57,6 +60,7 @@ export class CronService implements OnModuleDestroy {
   stop() {
     if (this.state === State.Stopped)
       throw Error('CronService, stop: Service already stopped');
+    this.loggerService.log('Stopping CRON job');
     clearInterval(this.startedIntervalToken);
     this.state = State.Stopped;
   }

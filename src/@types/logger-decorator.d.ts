@@ -219,7 +219,7 @@ declare module 'logger-decorator' {
 
   type DecoratorConstructor = {
     //  eslint-disable-next-line prettier/prettier
-    new(config?: Configuration): (config?: DecoratorConfig) => ClassDecorator;
+    new(config?: Configuration): (config?: DecoratorConfig) => ClassDecorator & MethodDecorator;
   };
 
   function DecoratorFunction(config?: Configuration);
