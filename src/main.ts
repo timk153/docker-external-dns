@@ -15,7 +15,7 @@ async function bootstrap() {
     bufferLogs: true,
     logger: ['error'],
   });
-  app.useLogger(app.get(ConsoleLoggerService));
+  app.useLogger(await app.resolve(ConsoleLoggerService));
   app.enableShutdownHooks();
   const appService = app.get(AppService);
   const cronService = app.get(CronService);
