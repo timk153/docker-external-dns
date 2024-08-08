@@ -38,7 +38,7 @@ stages:
               pathToSources: '$(Build.ArtifactStagingDirectory)/src/'
               failIfCoverageEmpty: true
 
-          - task: BuildQualityChecks@8
+          - task: BuildQualityChecks@9
             condition: succeededOrFailed()
             displayName: 'Check: Code Coverage Check'
             inputs:

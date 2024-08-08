@@ -30,6 +30,11 @@ export const validationSchema = Joi.object({
     .pattern(/^\/run\/secrets\/[A-Za-z0-9-_]+$/)
     .trim()
     .empty(),
+  LOG_LEVEL: Joi.string()
+    .trim()
+    .empty('')
+    .default('error')
+    .allow('log', 'error', 'warn', 'debug', 'verbose', 'fatal'),
 }).xor('API_TOKEN', 'API_TOKEN_FILE');
 
 /**

@@ -71,6 +71,8 @@ describe('App Configuration', () => {
     ) => {
       // arrange
 
+      // note due to LOG_LEVEL being constrained to an enum, it has it's own tests
+
       // ensures the custom configuration isn't parsed as this mutates the configuration
       // and has behaviour associated with specific values being set.
       const spyLoadConfigurationApiTokenFile = jest
@@ -85,6 +87,7 @@ describe('App Configuration', () => {
       process.env.EXECUTION_FREQUENCY_SECONDS = executionFrequencySeconds;
       setEnvironmentVariable('API_TOKEN', apiToken);
       setEnvironmentVariable('API_TOKEN_FILE', apiTokenFile);
+      process.env.LOG_LEVEL = 'info';
 
       // act
       const sut = await getSystemUnderTest();
@@ -112,31 +115,85 @@ describe('App Configuration', () => {
     },
   );
 
+  it('should validate all valid LOG_LEVELS', async () => {
+    // arrange
+    const testCases = ['log', 'error', 'warn', 'debug', 'verbose', 'fatal'];
+
+    // act
+    for (let i = 0; i < testCases.length; i += 1) {
+      // arrange
+      const spyLoadConfigurationApiTokenFile = jest
+        .spyOn(ConfigurationModule, 'loadConfigurationApiTokenFile')
+        .mockReturnValue({});
+      const spyLoadConfigurationComposedConstants = jest
+        .spyOn(ConfigurationModule, 'loadConfigurationComposedConstants')
+        .mockReturnValue({ ENTRY_IDENTIFIER: '' });
+
+      process.env.PROJECT_LABEL = 'label';
+      process.env.INSTANCE_ID = '1';
+      process.env.EXECUTION_FREQUENCY_SECONDS = '60';
+      setEnvironmentVariable('API_TOKEN', 'validtoken');
+      setEnvironmentVariable('API_TOKEN_FILE', undefined);
+      process.env.LOG_LEVEL = testCases[i];
+
+      // act
+
+      // permitted in this case due to being a test case
+      // eslint-disable-next-line no-await-in-loop
+      const sut = await getSystemUnderTest();
+
+      // assert
+      expect(sut.get('LOG_LEVEL', { infer: true })).toEqual(
+        process.env.LOG_LEVEL,
+      );
+
+      // clean up
+      spyLoadConfigurationApiTokenFile.mockRestore();
+      spyLoadConfigurationComposedConstants.mockRestore();
+    }
+  });
+
   each([
-    ['project&label', 'valid', 60, mockReadFileSyncValue, undefined],
-    ['valid', '{tag}_%value%', 60, mockReadFileSyncValue, undefined],
-    ['valid', 'valid', 60, undefined, 'invalid'],
-    ['valid', 'valid', 60, undefined, undefined],
-    ['valid', 'valid', 60, undefined, ''],
-    ['valid', 'valid', 60, undefined, '   '],
-    ['valid', 'valid', 60, apiTokenInvalidTestCases[0], undefined],
-    ['valid', 'valid', 60, apiTokenInvalidTestCases[1], undefined],
-    ['valid', 'valid', 60, apiTokenInvalidTestCases[2], undefined],
-    ['valid', 'valid', 60, apiTokenInvalidTestCases[3], undefined],
-    ['valid', 'valid', 60, apiTokenInvalidTestCases[4], undefined],
-    ['valid', 'valid', 60, apiTokenInvalidTestCases[5], undefined],
-    ['valid', 'valid', 60, apiTokenInvalidTestCases[6], undefined],
-    ['valid', 'valid', 60, apiTokenInvalidTestCases[7], undefined],
-    ['valid', 'valid', 0, mockReadFileSyncValue, undefined],
-    ['valid', 'valid', 'SomethingNotNumeric', mockReadFileSyncValue, undefined],
+    ['project&label', 'valid', 60, mockReadFileSyncValue, undefined, 'debug'],
+    ['valid', '{tag}_%value%', 60, mockReadFileSyncValue, undefined, 'debug'],
+    ['valid', 'valid', 60, undefined, 'invalid', 'debug'],
+    ['valid', 'valid', 60, undefined, undefined, 'debug'],
+    ['valid', 'valid', 60, undefined, '', 'debug'],
+    ['valid', 'valid', 60, undefined, '   ', 'debug'],
+    ['valid', 'valid', 60, apiTokenInvalidTestCases[0], undefined, 'debug'],
+    ['valid', 'valid', 60, apiTokenInvalidTestCases[1], undefined, 'debug'],
+    ['valid', 'valid', 60, apiTokenInvalidTestCases[2], undefined, 'debug'],
+    ['valid', 'valid', 60, apiTokenInvalidTestCases[3], undefined, 'debug'],
+    ['valid', 'valid', 60, apiTokenInvalidTestCases[4], undefined, 'debug'],
+    ['valid', 'valid', 60, apiTokenInvalidTestCases[5], undefined, 'debug'],
+    ['valid', 'valid', 60, apiTokenInvalidTestCases[6], undefined, 'debug'],
+    ['valid', 'valid', 60, apiTokenInvalidTestCases[7], undefined, 'debug'],
+    ['valid', 'valid', 0, mockReadFileSyncValue, undefined, 'debug'],
+    [
+      'valid',
+      'valid',
+      'SomethingNotNumeric',
+      mockReadFileSyncValue,
+      undefined,
+      'debug',
+    ],
+    [
+      'valid',
+      'valid',
+      'SomethingNotNumeric',
+      mockReadFileSyncValue,
+      undefined,
+      'unknown',
+    ],
   ]).it(
-    'should invalidate: { PROJECT_LABEL: "%p", INSTANCE_ID: "%p", EXECUTION_FREQUENCY_SECONDS: "%p", API_TOKEN: "%p", API_TOKEN_FILE: "%p" }',
+    'should invalidate: { PROJECT_LABEL: "%p", INSTANCE_ID: "%p", EXECUTION_FREQUENCY_SECONDS: "%p", API_TOKEN: "%p", API_TOKEN_FILE: "%p", LOG_LEVEL: "%p" }',
     async (
       projectLabel,
       instanceId,
       executionFrequencySeconds,
       apiToken,
       apiTokenFile,
+      logLevel,
     ) => {
       // arrange
       process.env.PROJECT_LABEL = projectLabel;
@@ -144,6 +201,7 @@ describe('App Configuration', () => {
       process.env.EXECUTION_FREQUENCY_SECONDS = executionFrequencySeconds;
       setEnvironmentVariable('API_TOKEN', apiToken);
       setEnvironmentVariable('API_TOKEN_FILE', apiTokenFile);
+      process.env.LOG_LEVEL = logLevel;
 
       // act / assert
       await expect(async () => getSystemUnderTest()).rejects.toThrow();
@@ -156,6 +214,7 @@ describe('App Configuration', () => {
     delete process.env.INSTANCE_ID;
     delete process.env.EXECUTION_FREQUENCY_SECONDS;
     process.env.API_TOKEN = mockReadFileSyncValue;
+    delete process.env.LOG_LEVEL;
 
     // act
     const sut = await getSystemUnderTest();
@@ -166,6 +225,7 @@ describe('App Configuration', () => {
     );
     expect(sut.get('INSTANCE_ID', { infer: true })).toEqual('1');
     expect(sut.get('EXECUTION_FREQUENCY_SECONDS', { infer: true })).toEqual(60);
+    expect(sut.get('LOG_LEVEL', { infer: true })).toEqual('error');
   });
 
   each(['', '     ']).it(
@@ -176,6 +236,7 @@ describe('App Configuration', () => {
       process.env.INSTANCE_ID = element;
       process.env.EXECUTION_FREQUENCY_SECONDS = '';
       process.env.API_TOKEN = mockReadFileSyncValue;
+      process.env.LOG_LEVEL = element;
 
       // act
       const sut = await getSystemUnderTest();
@@ -188,6 +249,7 @@ describe('App Configuration', () => {
       expect(sut.get('EXECUTION_FREQUENCY_SECONDS', { infer: true })).toEqual(
         60,
       );
+      expect(sut.get('LOG_LEVEL', { infer: true })).toEqual('error');
     },
   );
 
@@ -265,6 +327,7 @@ describe('App Configuration', () => {
       process.env.INSTANCE_ID = paramInstanceId;
       setEnvironmentVariable('API_TOKEN', mockReadFileSyncValue);
       setEnvironmentVariable('API_TOKEN_FILE', undefined);
+      process.env.LOG_LEVEL = 'debug';
 
       // act
       const sut = await getSystemUnderTest();
