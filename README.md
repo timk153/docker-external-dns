@@ -21,23 +21,13 @@ Currently only CloudFlare is supported as it was designed for a personal project
 
 ## Running locally
 
+<span style="color: red; font-weight: bold;">IMPORTANT:</span>
+Please see the [Examples](./docs/EXAMPLE.md) for a detailed explanation of how to use / run the project.
+
 ### Installation
 
 ```bash
 $ yarn install
-```
-
-### Running the app
-
-```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
 ```
 
 ### Test
