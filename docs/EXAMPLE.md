@@ -2,6 +2,15 @@
 
 The project provides a Docker Compose external DNS container specifically for CloudFlare. It supports DNS entries of types A, CNAME, NS, and MX. Configuration is managed through environment variables and labels applied to Docker containers. Detailed examples for various configurations and DNS record types are provided in the [Examples](#examples) section. For more details on DNS record types, refer to the [DNS Entry Types](#dns-entry-types) section.
 
+# Troubleshooting
+
+## Hangs at startup
+
+Check your supplied LOG_LEVEL.<br/>
+Ensure it is one of: 'log', 'error', 'warn', 'debug', 'verbose', 'fatal'
+
+If set to an invalid value the project will hand at start-up. I've tried to address this behavior unsuccessfully. For now awareness is the simplest solution.
+
 # How to Use
 
 Using the Docker Compose External DNS container is very straightforward. You need to declare an instance of it within your Docker Compose definition (docker-compose.y(a)ml) with the appropriate volume mount and environment variables set. Then, add some labels to your containers.
@@ -20,14 +29,14 @@ This file comprises the following sections:
 The container is configured via environment variables. The following table describes the variable name, its default value (if any), and what it does.
 Detailed examples are available in the [Examples](#examples) section.
 
-| Variable Name               | Default Value               | Description                                                                                                                                                                                                                                                                                                                                                                |
-| --------------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PROJECT_LABEL               | docker-compose-external-dns | Detailed example available in the [project Label and Instance ID section](#project_label-and-instance_id) section.<br/><br/>Forms part of the label the project looks for on Docker containers to interpret as DNS entries. Also written as a comment to Cloudflare DNS entries managed by this instance of the project.                                                   |
-| INSTANCE_ID                 | 1                           | Detailed example available in the [project Label and Instance ID section](#project_label-and-instance_id) section.<br/><br/>Forms part of the label the project looks for on Docker containers to interpret as DNS entries. Also written as a comment to Cloudflare DNS entries managed by this instance of the project.                                                   |
-| EXECUTION_FREQUENCY_SECONDS | 60                          | How frequently the CRON job should execute to detect changes. Default is every 60 seconds. Undefined or empty uses the default. Minimum is every 1 second. There is no maximum. This must be an integer.                                                                                                                                                                   |
-| API_TOKEN                   |                             | You must supply either API_TOKEN or API_TOKEN_FILE but not both.<br/><br/>Your API token from Cloudflare. Must be granted Zone.Zone read and Zone.DNS edit.<br/><br/><span style="color: red; font-weight:bold">IMPORTANT</span> Use of this property is insecure as your API_TOKEN will be in plain text. It is recommended you use API_TOKEN_FILE. Use at your own risk. |
-| API_TOKEN_FILE              |                             | You must supply either API_TOKEN or API_TOKEN_FILE but not both.<br/><br/>Secure way to share your Cloudflare API Token with the project. Recommended approach for Docker Swarm. Compatible with Docker Compose (but less secure).<br/><br/>Read Docker Compose docs for more information: [Docker Compose Secrets](https://docs.docker.com/compose/use-secrets/)          |
-| LOG_LEVEL                   | error                       | The current logging level. The default is error, meaning only errors get logged.<br/><br/>Each level includes the levels above it from most specific to least specific. By way of example, trace will output everything. Debug will ignore trace. Info will ignore debug and trace.<br/><br/>From most specific to least:<br/>error<br/>warn<br/>info<br/>debug<br/>trace  |
+| Variable Name               | Default Value               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PROJECT_LABEL               | docker-compose-external-dns | Detailed example available in the [project Label and Instance ID section](#project_label-and-instance_id) section.<br/><br/>Forms part of the label the project looks for on Docker containers to interpret as DNS entries. Also written as a comment to Cloudflare DNS entries managed by this instance of the project.                                                                                                                                    |
+| INSTANCE_ID                 | 1                           | Detailed example available in the [project Label and Instance ID section](#project_label-and-instance_id) section.<br/><br/>Forms part of the label the project looks for on Docker containers to interpret as DNS entries. Also written as a comment to Cloudflare DNS entries managed by this instance of the project.                                                                                                                                    |
+| EXECUTION_FREQUENCY_SECONDS | 60                          | How frequently the CRON job should execute to detect changes. Default is every 60 seconds. Undefined or empty uses the default. Minimum is every 1 second. There is no maximum. This must be an integer.                                                                                                                                                                                                                                                    |
+| API_TOKEN                   |                             | You must supply either API_TOKEN or API_TOKEN_FILE but not both.<br/><br/>Your API token from Cloudflare. Must be granted Zone.Zone read and Zone.DNS edit.<br/><br/><span style="color: red; font-weight:bold">IMPORTANT</span> Use of this property is insecure as your API_TOKEN will be in plain text. It is recommended you use API_TOKEN_FILE. Use at your own risk.                                                                                  |
+| API_TOKEN_FILE              |                             | You must supply either API_TOKEN or API_TOKEN_FILE but not both.<br/><br/>Secure way to share your Cloudflare API Token with the project. Recommended approach for Docker Swarm. Compatible with Docker Compose (but less secure).<br/><br/>Read Docker Compose docs for more information: [Docker Compose Secrets](https://docs.docker.com/compose/use-secrets/)                                                                                           |
+| LOG_LEVEL                   | error                       | The current logging level. The default is error, meaning only errors and fatal get logged.<br/><br/>Each level includes the levels above it from most specific to least specific. By way of example, verbose will output everything. debug will ignore verbose. log will ignore debug and verbose.<br/><br/>From most specific to least:</br>fatal<br/>error<br/>warn<br/>log<br/>debug<br/>verbose<br/><br/>These log levels come from the NestJS project. |
 
 #### PROJECT_LABEL and INSTANCE_ID
 
@@ -176,7 +185,7 @@ services:
     image: 'busybox:latest'
     command: 'sleep 3600'
     labels:
-      - "docker-compose-external-dns:1={ type: 'A', name: 'my-domain.com', address: '8.8.8.8', proxy: false }"
+      - 'docker-compose-external-dns:1=[{ "type": "A", "name": "my-domain.com", "address": "8.8.8.8", "proxy": false }]'
 ```
 
 Explanation: This setup includes the docker-compose-external-dns service configured with the API_TOKEN environment variable. It will use the token to authenticate with Cloudflare. The other-service has a label that specifies a DNS A record for my-domain.com pointing to 8.8.8.8 with no proxy.
@@ -201,7 +210,7 @@ services:
     image: 'busybox:latest'
     command: 'sleep 3600'
     labels:
-      - "docker-compose-external-dns:1={ type: 'A', name: 'my-domain.com', address: '8.8.8.8', proxy: false }"
+      - 'docker-compose-external-dns:1=[{ "type": "A", "name": "my-domain.com", "address": "8.8.8.8", "proxy": false }]'
 
 secrets:
   CLOUDFLARE_API_TOKEN:
@@ -234,7 +243,7 @@ services:
     image: 'busybox:latest'
     command: 'sleep 3600'
     labels:
-      - "dns.com.example:project-subdomain={ type: 'CNAME', name: 'project.example.com', target: 'example.com', proxy: true }"
+      - 'dns.com.example:project-subdomain=[{ "type": "CNAME", "name": "project.example.com", "target": "example.com", "proxy": true }]'
 ```
 
 Explanation: In this configuration:<br/>
@@ -266,8 +275,9 @@ services:
     image: 'busybox:latest'
     command: 'sleep 3600'
     labels:
-      - "docker-compose-external-dns:1={ type: 'A', name: 'my-domain.com', address: '8.8.8.8', proxy: false }"
-      - "docker-compose-external-dns:1={ type: 'A', name: 'my-other-domain.org', address: '8.8.8.8', proxy: true }"
+      - 'docker-compose-external-dns:1=[
+        { "type": "A", "name": "my-domain.com", "address": "8.8.8.8", "proxy": false },
+        { "type": "A", "name": "my-other-domain.org", "address": "8.8.8.8", "proxy": true }]'
 ```
 
 Explanation: This setup shows how to handle DNS records for two different domains (my-domain.com and my-other-domain.org) with one instance of docker-compose-external-dns. Each domain has its own A record configuration. The my-other-domain.org entry uses Cloudflare's proxy.
@@ -303,8 +313,8 @@ docker-compose-external-dns-2:
     image: 'busybox:latest'
     command: 'sleep 3600'
     labels:
-      - "docker-compose-external-dns:1={ type: 'A', name: 'my-domain.com', address: '8.8.8.8', proxy: false }"
-      - "docker-compose-external-dns:2={ type: 'A', name: 'my-other-domain.org', address: '8.8.8.8', proxy: true }"
+      - 'docker-compose-external-dns:1=[{ "type": "A", "name": "my-domain.com", "address": "8.8.8.8", "proxy": false }]'
+      - 'docker-compose-external-dns:2=[{ "type": "A", "name": "my-other-domain.org", "address": "8.8.8.8", "proxy": true }]'
 ```
 
 Explanation: This setup uses two separate docker-compose-external-dns services to manage DNS entries for my-domain.com and my-other-domain.org. Each service is configured with its own API token and instance ID. This allows for independent management of DNS entries for each domain.
@@ -337,8 +347,8 @@ docker-compose-external-dns-2:
     image: 'busybox:latest'
     command: 'sleep 3600'
     labels:
-      - "dns.com.my-domain:1={ type: 'A', name: 'my-domain.com', address: '8.8.8.8', proxy: false }"
-      - "dns.org.my-other-domain:1={ type: 'A', name: 'my-other-domain.org', address: '8.8.8.8', proxy: true }"
+      - 'dns.com.my-domain:1=[{ "type": "A", "name": "my-domain.com", "address": "8.8.8.8", "proxy": false }]'
+      - 'dns.org.my-other-domain:1=[{ "type": "A", "name": "my-other-domain.org", "address": "8.8.8.8", "proxy": true }]'
 ```
 
 Explanation: This setup uses two separate docker-compose-external-dns services to manage DNS entries for my-domain.com and my-other-domain.org. Each service is configured with its own API token and project label. This allows for independent management of DNS entries for each domain.
@@ -366,7 +376,7 @@ services:
     image: 'busybox:latest'
     command: 'sleep 3600'
     labels:
-      - "docker-compose-external-dns:1={ type: 'A', name: 'my-domain.com', address: '8.8.8.8', proxy: false }"
+      - 'docker-compose-external-dns:1=[{ "type": "A", "name": "my-domain.com", "address": "8.8.8.8", "proxy": false }]'
 ```
 
 Explanation: This example configures an A record for my-domain.com pointing to 8.8.8.8 without using Cloudflare's proxy.
@@ -389,8 +399,9 @@ services:
     image: 'busybox:latest'
     command: 'sleep 3600'
     labels:
-      - "docker-compose-external-dns:1={ type: 'A', name: 'my-domain.com', address: '8.8.8.8', proxy: false }"
-      - "docker-compose-external-dns:1={ type: 'CNAME', name: 'sub.my-domain.com', target: 'my-domain.com', proxy: false }"
+      - 'docker-compose-external-dns:1=[
+        { "type": "A", "name": "my-domain.com", "address": "8.8.8.8", "proxy": false },
+        { "type": "CNAME", "name": "sub.my-domain.com", "target": "my-domain.com", "proxy": false }]'
 ```
 
 Explanation: This setup includes a CNAME record that aliases sub.my-domain.com to my-domain.com, following the A record configuration for my-domain.com.
@@ -413,9 +424,10 @@ services:
     image: 'busybox:latest'
     command: 'sleep 3600'
     labels:
-      - "docker-compose-external-dns:1={ type: 'A', name: 'lan.my-domain.com', address: '192.168.0.1', proxy: false }"
-      - "docker-compose-external-dns:1={ type: 'CNAME', name: 'ns1.lan.my-domain.com', target: 'lan.my-domain.com', proxy: false }"
-      - "docker-compose-external-dns:1={ type: 'NS', name: 'lan.my-domain.com', server: 'ns1.lan.my-domain.com' }"
+      - 'docker-compose-external-dns:1=[
+        { "type": "A", "name": "lan.my-domain.com", "address": "192.168.0.1", "proxy": false },
+        { "type": "CNAME", "name": "ns1.lan.my-domain.com", "target": "lan.my-domain.com", "proxy": false },
+        { "type": "NS", "name": "lan.my-domain.com", "server": "ns1.lan.my-domain.com" }]'
 ```
 
 Explanation: This configuration includes an NS record specifying ns1.lan.my-domain.com as the nameserver for lan.my-domain.com, alongside an A record for lan.my-domain.com.
@@ -438,9 +450,10 @@ services:
     image: 'busybox:latest'
     command: 'sleep 3600'
     labels:
-      - "docker-compose-external-dns:1={ type: 'A', name: 'my-domain.com', address: '8.8.8.8', proxy: false }"
-      - "docker-compose-external-dns:1={ type: 'CNAME', name: 'mx1.my-domain.com', target: 'my-domain.com', proxy: false }"
-      - "docker-compose-external-dns:1={ type: 'MX', name: 'my-domain.com', server: 'mx1.my-domain.com', priority: 0 }"
+      - 'docker-compose-external-dns:1=[
+        { "type": "A", "name": "my-domain.com", "address": "8.8.8.8", "proxy": false },
+        { "type": "CNAME", "name": "mx1.my-domain.com", "target": "my-domain.com", "proxy": false },
+        { "type": "MX", "name": "my-domain.com", "server": "mx1.my-domain.com", "priority": 0 }]'
 ```
 
 Explanation: This example sets up an MX record for my-domain.com that points to mx1.my-domain.com with a priority of 0. This is used to specify the mail server for the domain.
@@ -461,11 +474,12 @@ services:
     image: 'busybox:latest'
     command: 'sleep 3600'
     labels:
-      - "docker-compose-external-dns:1={ type: 'A', name: 'my-domain.com', address: '8.8.8.8', proxy: false }"
-      - "docker-compose-external-dns:1={ type: 'CNAME', name: 'mx1.my-domain.com', target: 'my-domain.com', proxy: false }"
-      - "docker-compose-external-dns:1={ type: 'MX', name: 'my-domain.com', server: 'mx1.my-domain.com', priority: 0 }"
-      - "docker-compose-external-dns:1={ type: 'CNAME', name: 'subdomain.my-domain.com', target: 'my-domain.com', proxy: false }"
-      - "docker-compose-external-dns:1={ type: 'A', name: 'lan.my-domain.com', address: '192.168.0.1', proxy: false }"
-      - "docker-compose-external-dns:1={ type: 'CNAME', name: 'ns1.lan.my-domain.com', target: 'lan.my-domain.com', proxy: false }"
-      - "docker-compose-external-dns:1={ type: 'NS', name: 'lan.my-domain.com', server: 'ns1.lan.my-domain.com' }"
+      - 'docker-compose-external-dns:1=[
+        { "type": "A", "name": "my-domain.com", "address": "8.8.8.8", "proxy": false },
+        { "type": "CNAME", "name": "mx1.my-domain.com", "target": "my-domain.com", "proxy": false },
+        { "type": "MX", "name": "my-domain.com", "server": "mx1.my-domain.com", "priority": 0 },
+        { "type": "CNAME", "name": "subdomain.my-domain.com", "target": "my-domain.com", "proxy": false },
+        { "type": "A", "name": "lan.my-domain.com", "address": "192.168.0.1", "proxy": false },
+        { "type": "CNAME", "name": "ns1.lan.my-domain.com", "target": "lan.my-domain.com", "proxy": false },
+        { "type": "NS", "name": "lan.my-domain.com", "server": "ns1.lan.my-domain.com" }]'
 ```

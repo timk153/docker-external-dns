@@ -1,7 +1,7 @@
 import each from 'jest-each';
 import { ConfigService } from '@nestjs/config';
 import { createMock, DeepMocked } from '@golevelup/ts-jest';
-import { ConsoleLoggerService } from './logger.service';
+import { ConsoleLoggerService, isLogLevel } from './logger.service';
 
 describe('LoggerService', () => {
   let mockConfigService: DeepMocked<ConfigService>;
@@ -47,4 +47,41 @@ describe('LoggerService', () => {
       expect(sut.isLevelEnabled('verbose')).toBe(logLevelResults[level][5]);
     },
   );
+
+  it('Should default to error if supplied LOG_LEVEL is invalid, otherwise the errors arent visible', () => {
+    // arrange
+    const expectedLevel = 'error';
+    mockConfigService.get.mockImplementation((property) => {
+      if (property === 'LOG_LEVEL') return 'invalid-level';
+      return undefined;
+    });
+
+    // act
+    const sut = new ConsoleLoggerService(mockConfigService);
+
+    // assert
+    expect(sut.isLevelEnabled('fatal')).toBe(logLevelResults[expectedLevel][0]);
+    expect(sut.isLevelEnabled('error')).toBe(logLevelResults[expectedLevel][1]);
+    expect(sut.isLevelEnabled('warn')).toBe(logLevelResults[expectedLevel][2]);
+    expect(sut.isLevelEnabled('log')).toBe(logLevelResults[expectedLevel][3]);
+    expect(sut.isLevelEnabled('debug')).toBe(logLevelResults[expectedLevel][4]);
+    expect(sut.isLevelEnabled('verbose')).toBe(
+      logLevelResults[expectedLevel][5],
+    );
+  });
+
+  describe('isLogLevel', () => {
+    each(['log', 'error', 'warn', 'debug', 'verbose', 'fatal']).it(
+      'Should validate LogLevel (%p)',
+      (value) => {
+        // act / assert
+        expect(isLogLevel(value)).toBe(true);
+      },
+    );
+
+    it('Should invalidate non LogLevels', () => {
+      // act / assert
+      expect(isLogLevel('invalid')).toBe(false);
+    });
+  });
 });

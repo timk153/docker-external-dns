@@ -46,11 +46,11 @@ export interface ICloudFlareEntry extends IHasDnsType {
  * Types of DNS entry supported
  */
 export enum DNSTypes {
-  A,
-  CNAME,
-  MX,
-  NS,
-  Unsupported,
+  A = 'A',
+  CNAME = 'CNAME',
+  MX = 'MX',
+  NS = 'NS',
+  Unsupported = 'Unsupported',
 }
 
 /**

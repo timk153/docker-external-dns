@@ -13,7 +13,6 @@ import { ConsoleLoggerService } from './logger.service';
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule, {
     bufferLogs: true,
-    logger: ['error'],
   });
   app.useLogger(await app.resolve(ConsoleLoggerService));
   app.enableShutdownHooks();

@@ -1,6 +1,6 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { setInterval, clearInterval } from 'timers';
+import { setTimeout, clearTimeout } from 'timers';
 import { AppService } from '../app.service';
 import { getLogClassDecorator } from '../utility.functions';
 import { ConsoleLoggerService } from '../logger.service';
@@ -18,7 +18,7 @@ export enum State {
 export class CronService implements OnModuleDestroy {
   private state = State.Stopped;
 
-  private startedIntervalToken?: NodeJS.Timeout;
+  private startedTimeoutToken?: NodeJS.Timeout;
 
   constructor(
     private configService: ConfigService,
@@ -47,9 +47,13 @@ export class CronService implements OnModuleDestroy {
       `Staring CRON job, execution frequency is every ${interval} seconds`,
     );
     this.appService.synchronise();
-    this.startedIntervalToken = setInterval(() => {
-      this.appService.synchronise();
-    }, interval);
+    const queue = () => {
+      this.startedTimeoutToken = setTimeout(() => {
+        this.appService.synchronise();
+        queue();
+      }, interval * 1000);
+    };
+    queue();
     this.state = State.Started;
   }
 
@@ -61,7 +65,7 @@ export class CronService implements OnModuleDestroy {
     if (this.state === State.Stopped)
       throw Error('CronService, stop: Service already stopped');
     this.loggerService.log('Stopping CRON job');
-    clearInterval(this.startedIntervalToken);
+    clearTimeout(this.startedTimeoutToken);
     this.state = State.Stopped;
   }
 

@@ -52,9 +52,15 @@ describe('App Configuration', () => {
   }
 
   each([
-    ['project-label1', 'instance-id2', 120, mockReadFileSyncValue, undefined],
     [
-      'project_label1',
+      'new.project-label_1',
+      'instance-id2',
+      120,
+      mockReadFileSyncValue,
+      undefined,
+    ],
+    [
+      'new.project-label_1',
       'instance-id2',
       120,
       undefined,

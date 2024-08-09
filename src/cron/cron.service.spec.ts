@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { createMock, DeepMocked } from '@golevelup/ts-jest';
-import { setInterval, clearInterval } from 'timers';
+import { setTimeout, clearTimeout } from 'timers';
 import { ConfigService } from '@nestjs/config';
 import { AppService } from '../app.service';
 import { CronService, State } from './cron.service';
@@ -8,12 +8,12 @@ import { ConsoleLoggerService } from '../logger.service';
 
 jest.mock('timers');
 
-const mockClearInterval = clearInterval as jest.MockedFunction<
-  typeof clearInterval
+const mockClearTimeout = clearTimeout as jest.MockedFunction<
+  typeof clearTimeout
 >;
-const mockSetInterval = setInterval as jest.MockedFunction<typeof setInterval>;
-const mockSetIntervalValue = 'set-interval-value' as unknown as NodeJS.Timeout;
-mockSetInterval.mockReturnValue(mockSetIntervalValue);
+const mockSetTimeout = setTimeout as jest.MockedFunction<typeof setTimeout>;
+const mockSetTimeoutValue = 'set-timeout-value' as unknown as NodeJS.Timeout;
+mockSetTimeout.mockReturnValue(mockSetTimeoutValue);
 
 describe('CronService', () => {
   let sut: CronService;
@@ -72,7 +72,7 @@ describe('CronService', () => {
     it('should execute "synchronise" at regular intervals', async () => {
       // arrange
       sut['state'] = State.Stopped;
-      delete sut['startedIntervalToken'];
+      delete sut['startedTimeoutToken'];
 
       // act
       sut.start();
@@ -87,18 +87,19 @@ describe('CronService', () => {
         'EXECUTION_FREQUENCY_SECONDS',
         { infer: true },
       );
-      expect(mockSetInterval).toHaveBeenCalledTimes(1);
-      expect(mockSetInterval).toHaveBeenCalledWith(
+      expect(mockSetTimeout).toHaveBeenCalledTimes(1);
+      expect(mockSetTimeout).toHaveBeenCalledWith(
         expect.any(Function),
-        envExecutionFrequencySeconds,
+        envExecutionFrequencySeconds * 1000,
       );
       expect(mockAppService.synchronise).toHaveBeenCalledTimes(1);
       expect(sut['state']).toEqual(State.Started);
-      expect(sut['startedIntervalToken']).toBe(mockSetIntervalValue);
+      expect(sut['startedTimeoutToken']).toBe(mockSetTimeoutValue);
 
       // arrange
-      const job = mockSetInterval.mock.lastCall?.[0];
+      const job = mockSetTimeout.mock.lastCall?.[0];
       if (job === undefined) throw new Error("job shouldn't be undefined");
+      mockSetTimeout.mockClear();
 
       // act
       await job();
@@ -106,6 +107,11 @@ describe('CronService', () => {
       // assert
       expect(mockAppService.synchronise).toHaveBeenCalledTimes(2);
       expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+      expect(mockSetTimeout).toHaveBeenCalledTimes(1);
+      expect(mockSetTimeout).toHaveBeenCalledWith(
+        expect.any(Function),
+        envExecutionFrequencySeconds * 1000,
+      );
     });
   });
 
@@ -130,7 +136,7 @@ describe('CronService', () => {
     it('should stop the execution loop', async () => {
       // arrange
       sut['state'] = State.Started;
-      sut['startedIntervalToken'] = mockSetIntervalValue;
+      sut['startedTimeoutToken'] = mockSetTimeoutValue;
 
       // act
       sut.stop();
@@ -140,8 +146,8 @@ describe('CronService', () => {
       expect(mockConsoleLoggerService.log).toHaveBeenCalledWith(
         'Stopping CRON job',
       );
-      expect(mockClearInterval).toHaveBeenCalledTimes(1);
-      expect(mockClearInterval).toHaveBeenCalledWith(mockSetIntervalValue);
+      expect(mockClearTimeout).toHaveBeenCalledTimes(1);
+      expect(mockClearTimeout).toHaveBeenCalledWith(mockSetTimeoutValue);
       expect(sut['state']).toEqual(State.Stopped);
       expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
       expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(

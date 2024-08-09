@@ -156,7 +156,7 @@ describe('AppService', () => {
     [DNSTypes.CNAME]: 'zone-2',
     [DNSTypes.MX]: 'zone-1',
     [DNSTypes.NS]: 'zone-3',
-  } as { [key: number]: string };
+  } as { [key: string]: string };
 
   let mockCloudFlareService: DeepMocked<CloudFlareService>;
   let mockCloudFlareFactory: DeepMocked<CloudFlareFactory>;
@@ -598,7 +598,7 @@ describe('AppService', () => {
           level: 'error',
           method: 'getCloudFlareRecordParameters',
           service: 'AppService',
-          params: `[ '${paramZoneId}', { type: 4 } ]`,
+          params: `[ '${paramZoneId}', { type: 'Unsupported' } ]`,
         }),
       );
     });

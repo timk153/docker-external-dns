@@ -6,7 +6,7 @@ import { NestedError } from './errors/nested-error';
 // Joi validation schema for environment variables
 export const validationSchema = Joi.object({
   PROJECT_LABEL: Joi.string()
-    .pattern(/^[A-Za-z0-9-_]+$/)
+    .pattern(/^[A-Za-z0-9-_.]+$/)
     .trim()
     .empty('')
     .default('docker-compose-external-dns'),
