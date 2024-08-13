@@ -9,27 +9,40 @@ stages:
     variables:
       CI: true
     jobs:
-      - job: docker_build_and_push
-        steps:
-          - checkout: self
-            fetchTags: true
-            fetchDepth: 0 # explicitly disable shallow fetch
+      - deployment: docker_build_and_push
+        environment: Production
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  fetchTags: true
+                  fetchDepth: 0 # explicitly disable shallow fetch
 
-          - task: PowerShell@2
-            displayName: Compute version number
-            inputs:
-              targetType: 'inline'
-              script: |
-                $gitVersion = git describe
-                Write-Host "##vso[task.setvariable variable=fullVersion;]$gitVersion"
+                - task: PowerShell@2
+                  displayName: Compute version number
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      $gitVersion = git describe
+                      $isWholeVersion = $false
+                      if ($gitVersion -match '^\d+\.\d+\.\d+$') {
+                          $isWholeVersion = $true
+                      }
+                      Write-Host "##vso[task.setvariable variable=fullVersion;]$gitVersion"
+                      Write-Host "##vso[task.setvariable variable=isWholeSemanticVersion;]$isWholeVersion"
 
-          - task: Docker@2
-            displayName: Build and push docker image
-            inputs:
-              containerRegistry: 'Docker Hub'
-              repository: 'tkilminster/docker-external-dns'
-              command: 'buildAndPush'
-              dockerfile: '**/Dockerfile'
-              tags: |
-                '$(fullVersion)'
-                latest
+                - task: Docker@2
+                  displayName: Build and push docker image
+                  inputs:
+                    containerRegistry: 'Docker Hub'
+                    repository: 'tkilminster/docker-external-dns'
+                    command: 'buildAndPush'
+                    dockerfile: '**/Dockerfile'
+                    ${{ if eq(variables['isWholeVersion'], true) }}:
+                      tags: |
+                        $(fullVersion)
+                        latest
+                    ${{ else }}:
+                      tags: |
+                        $(fullVersion)
