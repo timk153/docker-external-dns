@@ -21,13 +21,15 @@ stages:
               targetType: 'inline'
               script: |
                 $gitVersion = git describe
-                Write-Host "##vso[task.setvariable variable=fullVersion;]docker-compose-external-dns-$gitVersion"
+                Write-Host "##vso[task.setvariable variable=fullVersion;]$gitVersion"
 
           - task: Docker@2
             displayName: Build and push docker image
             inputs:
               containerRegistry: 'Docker Hub'
-              repository: 'tkilminster/projects'
+              repository: 'tkilminster/docker-external-dns'
               command: 'buildAndPush'
               dockerfile: '**/Dockerfile'
-              tags: '$(fullVersion)'
+              tags: |
+                '$(fullVersion)'
+                latest
