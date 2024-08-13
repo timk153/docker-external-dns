@@ -44,6 +44,7 @@ describe('DnsMxEntry', () => {
 
         // act / assert
         expect(entry.hasSameValue(compare)).toBe(true);
+        expect(entry.Key).not.toEqual(compare.Key);
       },
     );
 
@@ -51,10 +52,12 @@ describe('DnsMxEntry', () => {
       'should have the same value and identity (type %p)',
       (type) => {
         // arrange
-        const result = validDnsMxEntry(type);
+        const entry = validDnsMxEntry(type);
+        const compare = validDnsMxEntry(type);
 
         // act
-        expect(result.hasSameValue(result)).toBe(true);
+        expect(entry.hasSameValue(compare)).toBe(true);
+        expect(entry.Key).toEqual(compare.Key);
       },
     );
 
@@ -78,6 +81,7 @@ describe('DnsMxEntry', () => {
 
         // act / assert
         expect(entry.hasSameValue(compare)).toBe(false);
+        expect(entry.Key).not.toEqual(compare.Key);
       },
     );
 
@@ -99,6 +103,7 @@ describe('DnsMxEntry', () => {
 
         // act
         expect(entry.hasSameValue(compare)).toBe(false);
+        expect(entry.Key).toEqual(compare.Key);
       },
     );
   });

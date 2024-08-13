@@ -20,6 +20,11 @@ export const validationSchema = Joi.object({
     .min(1)
     .empty('')
     .default(60),
+  DDNS_EXECUTION_FREQUENCY_MINUTES: Joi.number()
+    .integer()
+    .min(1)
+    .empty('')
+    .default(60),
   API_TOKEN: Joi.string()
     .pattern(/^[A-Za-z0-9_]+$/)
     .min(10)

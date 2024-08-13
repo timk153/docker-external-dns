@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { createMock, DeepMocked } from '@golevelup/ts-jest';
-import { setTimeout, clearTimeout } from 'timers';
-import { ConfigService } from '@nestjs/config';
-import { AppService } from '../app.service';
+import { Injectable } from '@nestjs/common';
 import { CronService, State } from './cron.service';
 import { ConsoleLoggerService } from '../logger.service';
 
-jest.mock('timers');
+// legacyFakeTimers mocks timers using jest mocks
+// allows checking for invocations etc...
+jest.useFakeTimers({ legacyFakeTimers: true });
 
 const mockClearTimeout = clearTimeout as jest.MockedFunction<
   typeof clearTimeout
@@ -15,36 +15,49 @@ const mockSetTimeout = setTimeout as jest.MockedFunction<typeof setTimeout>;
 const mockSetTimeoutValue = 'set-timeout-value' as unknown as NodeJS.Timeout;
 mockSetTimeout.mockReturnValue(mockSetTimeoutValue);
 
+const mockExecuteIntervalSecondsValue = 999;
+const mockServiceNameValue = 'mock-service-name';
+
+@Injectable()
+class TestCronService extends CronService {
+  // spy used in test! hence not mocked
+  // ignored due to being test case
+  // eslint-disable-next-line class-methods-use-this
+  job(): Promise<void> {
+    return Promise.reject(new Error('Method not implemented.'));
+  }
+
+  // ignored due to being a test case
+  // eslint-disable-next-line class-methods-use-this
+  override get ExecutionFrequencySeconds(): number {
+    return mockExecuteIntervalSecondsValue;
+  }
+
+  // ignored due to being a test case
+  // eslint-disable-next-line class-methods-use-this
+  override get ServiceName(): string {
+    return mockServiceNameValue;
+  }
+}
+
 describe('CronService', () => {
-  let sut: CronService;
-  let mockConfigService: DeepMocked<ConfigService>;
-  let mockAppService: DeepMocked<AppService>;
+  let sut: TestCronService;
   let mockConsoleLoggerService: DeepMocked<ConsoleLoggerService>;
-  const envExecutionFrequencySeconds = 9999;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [CronService],
+      providers: [TestCronService],
     })
       .useMocker(createMock)
       .compile();
 
-    mockConfigService = module.get<ConfigService>(
-      ConfigService,
-    ) as DeepMocked<ConfigService>;
-    mockConfigService.get.mockImplementation((path) => {
-      if (path === 'EXECUTION_FREQUENCY_SECONDS')
-        return envExecutionFrequencySeconds;
-      throw new Error('Unexpected property requested');
-    });
-
-    mockAppService = module.get<AppService>(
-      AppService,
-    ) as DeepMocked<AppService>;
-
     mockConsoleLoggerService = module.get(ConsoleLoggerService);
 
-    sut = module.get<CronService>(CronService);
+    sut = module.get<TestCronService>(TestCronService);
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
   });
 
   it('should be defined', () => {
@@ -52,13 +65,26 @@ describe('CronService', () => {
   });
 
   describe('start', () => {
-    it('should error if already started', () => {
+    let spyJob: jest.SpyInstance;
+
+    beforeEach(() => {
+      spyJob = jest.spyOn(sut, 'job').mockResolvedValue();
+    });
+
+    afterAll(() => {
+      spyJob.mockRestore();
+    });
+
+    it('should error if already started', async () => {
       // arrange
-      const expected = new Error('CronService, start: Service already started');
-      sut['state'] = State.Started;
+      const expected = new Error(
+        `CronService (${mockServiceNameValue}), start: Service already started`,
+      );
+      sut['stateCron'] = State.Started;
 
       // act / assert
-      expect(() => sut.start()).toThrow(expected);
+      await expect(sut.start()).rejects.toThrow(expected);
+      expect(spyJob).not.toHaveBeenCalled();
       expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
       expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -69,31 +95,26 @@ describe('CronService', () => {
       );
     });
 
-    it('should execute "synchronise" at regular intervals', async () => {
+    it('should execute the job at regular intervals', async () => {
       // arrange
-      sut['state'] = State.Stopped;
+      sut['stateCron'] = State.Stopped;
       delete sut['startedTimeoutToken'];
 
       // act
-      sut.start();
+      await sut.start();
 
       // assert
       expect(mockConsoleLoggerService.log).toHaveBeenCalledTimes(1);
       expect(mockConsoleLoggerService.log).toHaveBeenCalledWith(
-        `Staring CRON job, execution frequency is every ${envExecutionFrequencySeconds} seconds`,
-      );
-      expect(mockConfigService.get).toHaveBeenCalledTimes(1);
-      expect(mockConfigService.get).toHaveBeenCalledWith(
-        'EXECUTION_FREQUENCY_SECONDS',
-        { infer: true },
+        `Staring CRON job for ${mockServiceNameValue}, execution frequency is every ${mockExecuteIntervalSecondsValue} seconds`,
       );
       expect(mockSetTimeout).toHaveBeenCalledTimes(1);
       expect(mockSetTimeout).toHaveBeenCalledWith(
         expect.any(Function),
-        envExecutionFrequencySeconds * 1000,
+        mockExecuteIntervalSecondsValue * 1000,
       );
-      expect(mockAppService.synchronise).toHaveBeenCalledTimes(1);
-      expect(sut['state']).toEqual(State.Started);
+      expect(spyJob).toHaveBeenCalledTimes(1);
+      expect(sut['stateCron']).toEqual(State.Started);
       expect(sut['startedTimeoutToken']).toBe(mockSetTimeoutValue);
 
       // arrange
@@ -105,12 +126,12 @@ describe('CronService', () => {
       await job();
 
       // assert
-      expect(mockAppService.synchronise).toHaveBeenCalledTimes(2);
+      expect(spyJob).toHaveBeenCalledTimes(2);
       expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
       expect(mockSetTimeout).toHaveBeenCalledTimes(1);
       expect(mockSetTimeout).toHaveBeenCalledWith(
         expect.any(Function),
-        envExecutionFrequencySeconds * 1000,
+        mockExecuteIntervalSecondsValue * 1000,
       );
     });
   });
@@ -118,8 +139,10 @@ describe('CronService', () => {
   describe('stop', () => {
     it('should error if already stopped', () => {
       // arrange
-      const expected = new Error('CronService, stop: Service already stopped');
-      sut['state'] = State.Stopped;
+      const expected = new Error(
+        `CronService (${mockServiceNameValue}), stop: Service already stopped`,
+      );
+      sut['stateCron'] = State.Stopped;
 
       // act / asse;rt
       expect(() => sut.stop()).toThrow(expected);
@@ -135,7 +158,7 @@ describe('CronService', () => {
 
     it('should stop the execution loop', async () => {
       // arrange
-      sut['state'] = State.Started;
+      sut['stateCron'] = State.Started;
       sut['startedTimeoutToken'] = mockSetTimeoutValue;
 
       // act
@@ -144,11 +167,11 @@ describe('CronService', () => {
       // assert
       expect(mockConsoleLoggerService.log).toHaveBeenCalledTimes(1);
       expect(mockConsoleLoggerService.log).toHaveBeenCalledWith(
-        'Stopping CRON job',
+        `Stopping CRON job for ${mockServiceNameValue}`,
       );
       expect(mockClearTimeout).toHaveBeenCalledTimes(1);
       expect(mockClearTimeout).toHaveBeenCalledWith(mockSetTimeoutValue);
-      expect(sut['state']).toEqual(State.Stopped);
+      expect(sut['stateCron']).toEqual(State.Stopped);
       expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
       expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
         expect.objectContaining({

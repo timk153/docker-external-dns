@@ -1,16 +1,21 @@
 import { Injectable, LoggerService } from '@nestjs/common';
 import { Record } from 'cloudflare/resources/dns/records';
+import { ConfigService } from '@nestjs/config';
+import { isNumber } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 import { CloudFlareService } from './cloud-flare/cloud-flare.service';
 import { CloudFlareFactory } from './cloud-flare/cloud-flare.factory';
 import { DockerService } from './docker/docker.service';
 import { computeSetDifference } from './app.functions';
 import { DnsbaseEntry } from './dto/dnsbase-entry';
-import { isDnsAEntry } from './dto/dnsa-entry';
+import { DnsaEntry, isDnsAEntry } from './dto/dnsa-entry';
 import { isDnsCnameEntry } from './dto/dnscname-entry';
 import { isDnsMxEntry } from './dto/dnsmx-entry';
 import { isDnsNsEntry } from './dto/dnsns-entry';
 import { getLogClassDecorator } from './utility.functions';
 import { ConsoleLoggerService } from './logger.service';
+import { CronService, State as CronState } from './cron/cron.service';
+import { DdnsService } from './ddns/ddns.service';
 
 let loggerPointer: LoggerService;
 const LogDecorator = getLogClassDecorator(() => loggerPointer);
@@ -29,15 +34,41 @@ export enum State {
  */
 @LogDecorator()
 @Injectable()
-export class AppService {
+export class AppService extends CronService {
   private state = State.Uninitialized;
+
+  /**
+   * ServiceName used in logging present in CronService
+   */
+  // eslint-disable-next-line class-methods-use-this
+  get ServiceName(): string {
+    return AppService.name;
+  }
+
+  /**
+   * Fetches the EXECUTION_FREQUENCY_SECONDS
+   */
+  get ExecutionFrequencySeconds(): number {
+    const executionIntervalSeconds: number | undefined = this.configService.get(
+      'EXECUTION_FREQUENCY_SECONDS',
+      { infer: true },
+    );
+    if (!isNumber(executionIntervalSeconds))
+      throw new Error(
+        `AppService, ExecutionIntervalSeconds: Unreachable error, EXECUTION_FREQUENCY_SECONDS isn't a number (${executionIntervalSeconds})`,
+      );
+    return executionIntervalSeconds;
+  }
 
   constructor(
     private cloudFlareService: CloudFlareService,
     private cloudFlareFactory: CloudFlareFactory,
     private dockerService: DockerService,
-    private loggerService: ConsoleLoggerService,
+    private configService: ConfigService,
+    private ddnsService: DdnsService,
+    loggerService: ConsoleLoggerService,
   ) {
+    super(loggerService);
     loggerPointer = this.loggerService;
   }
 
@@ -58,7 +89,7 @@ export class AppService {
    * Adds, Updates and Deletes entries from CloudFlare.
    */
   @LogDecorator({ level: 'debug' })
-  async synchronise() {
+  async job() {
     if (this.state === State.Uninitialized)
       throw new Error(
         'AppService, synchronize: Not initialized, cannot synchronize. Call initialize first',
@@ -90,8 +121,29 @@ export class AppService {
     // Zone records get processed after docker entries are loaded and processed.
     const containers = await this.dockerService.getContainers();
     // get the docker entries
-    const dockerEntries =
-      await this.dockerService.extractDNSEntries(containers);
+    let dockerEntries = await this.dockerService.extractDNSEntries(containers);
+    // determine if DDNS is required
+    if (this.ddnsService.isDdnsRequired(dockerEntries)) {
+      if (this.ddnsService.getState() === CronState.Stopped)
+        await this.ddnsService.start();
+      const address = this.ddnsService.getIPAddress();
+      if (address === undefined) {
+        this.loggerService
+          .warn(`DDNS, IPAddress has yet to be fetched successfully. DDNS records have been filtered out. 
+          They'll be added in automatically once an IPAddress has been fetched.`);
+        dockerEntries = dockerEntries.filter(
+          (entry) => !(isDnsAEntry(entry) && entry.address === 'DDNS'),
+        );
+      } else {
+        dockerEntries = dockerEntries.map((entry) => {
+          if (!isDnsAEntry(entry)) return entry;
+          if (entry.address !== 'DDNS') return entry;
+          return plainToInstance(DnsaEntry, { ...entry, address });
+        });
+      }
+    } else if (this.ddnsService.getState() === CronState.Started)
+      await this.ddnsService.stop();
+
     // process the zone entries
     const cloudFlareEntries = Object.entries(zoneRecords).flatMap(
       ([zoneId, entries]) =>

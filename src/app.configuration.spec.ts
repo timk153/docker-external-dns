@@ -56,6 +56,7 @@ describe('App Configuration', () => {
       'new.project-label_1',
       'instance-id2',
       120,
+      60,
       mockReadFileSyncValue,
       undefined,
     ],
@@ -63,15 +64,18 @@ describe('App Configuration', () => {
       'new.project-label_1',
       'instance-id2',
       120,
+      60,
       undefined,
       '/run/secrets/API_TOKEN_FILE',
     ],
   ]).it(
-    'should validate: { PROJECT_LABEL: "%p", INSTANCE_ID: "%p", EXECUTION_FREQUENCY_SECONDS: "%p", API_TOKEN: "%p", API_TOKEN_FILE: "%p" }',
+    `should validate: { PROJECT_LABEL: "%p", INSTANCE_ID: "%p", EXECUTION_FREQUENCY_SECONDS: "%p",
+    DDNS_EXECUTION_FREQUENCY_MINUTES: "%p", API_TOKEN: "%p", API_TOKEN_FILE: "%p" }`,
     async (
       projectLabel,
       instanceId,
       executionFrequencySeconds,
+      ddnsExecutionFrequencyMinutes,
       apiToken,
       apiTokenFile,
     ) => {
@@ -91,6 +95,8 @@ describe('App Configuration', () => {
       process.env.PROJECT_LABEL = projectLabel;
       process.env.INSTANCE_ID = instanceId;
       process.env.EXECUTION_FREQUENCY_SECONDS = executionFrequencySeconds;
+      process.env.DDNS_EXECUTION_FREQUENCY_MINUTES =
+        ddnsExecutionFrequencyMinutes;
       setEnvironmentVariable('API_TOKEN', apiToken);
       setEnvironmentVariable('API_TOKEN_FILE', apiTokenFile);
       process.env.LOG_LEVEL = 'info';
@@ -107,6 +113,14 @@ describe('App Configuration', () => {
       );
       expect(sut.get('EXECUTION_FREQUENCY_SECONDS', { infer: true })).toEqual(
         Number.parseInt(process.env.EXECUTION_FREQUENCY_SECONDS as string, 10),
+      );
+      expect(
+        sut.get('DDNS_EXECUTION_FREQUENCY_MINUTES', { infer: true }),
+      ).toEqual(
+        Number.parseInt(
+          process.env.DDNS_EXECUTION_FREQUENCY_MINUTES as string,
+          10,
+        ),
       );
       expect(sut.get('API_TOKEN', { infer: true })).toEqual(
         process.env.API_TOKEN,
@@ -160,24 +174,105 @@ describe('App Configuration', () => {
   });
 
   each([
-    ['project&label', 'valid', 60, mockReadFileSyncValue, undefined, 'debug'],
-    ['valid', '{tag}_%value%', 60, mockReadFileSyncValue, undefined, 'debug'],
-    ['valid', 'valid', 60, undefined, 'invalid', 'debug'],
-    ['valid', 'valid', 60, undefined, undefined, 'debug'],
-    ['valid', 'valid', 60, undefined, '', 'debug'],
-    ['valid', 'valid', 60, undefined, '   ', 'debug'],
-    ['valid', 'valid', 60, apiTokenInvalidTestCases[0], undefined, 'debug'],
-    ['valid', 'valid', 60, apiTokenInvalidTestCases[1], undefined, 'debug'],
-    ['valid', 'valid', 60, apiTokenInvalidTestCases[2], undefined, 'debug'],
-    ['valid', 'valid', 60, apiTokenInvalidTestCases[3], undefined, 'debug'],
-    ['valid', 'valid', 60, apiTokenInvalidTestCases[4], undefined, 'debug'],
-    ['valid', 'valid', 60, apiTokenInvalidTestCases[5], undefined, 'debug'],
-    ['valid', 'valid', 60, apiTokenInvalidTestCases[6], undefined, 'debug'],
-    ['valid', 'valid', 60, apiTokenInvalidTestCases[7], undefined, 'debug'],
-    ['valid', 'valid', 0, mockReadFileSyncValue, undefined, 'debug'],
+    [
+      'project&label',
+      'valid',
+      60,
+      120,
+      mockReadFileSyncValue,
+      undefined,
+      'debug',
+    ],
+    [
+      'valid',
+      '{tag}_%value%',
+      60,
+      120,
+      mockReadFileSyncValue,
+      undefined,
+      'debug',
+    ],
+    ['valid', 'valid', 60, 120, undefined, 'invalid', 'debug'],
+    ['valid', 'valid', 60, 120, undefined, undefined, 'debug'],
+    ['valid', 'valid', 60, 120, undefined, '', 'debug'],
+    ['valid', 'valid', 60, 120, undefined, '   ', 'debug'],
     [
       'valid',
       'valid',
+      60,
+      120,
+      apiTokenInvalidTestCases[0],
+      undefined,
+      'debug',
+    ],
+    [
+      'valid',
+      'valid',
+      60,
+      120,
+      apiTokenInvalidTestCases[1],
+      undefined,
+      'debug',
+    ],
+    [
+      'valid',
+      'valid',
+      60,
+      120,
+      apiTokenInvalidTestCases[2],
+      undefined,
+      'debug',
+    ],
+    [
+      'valid',
+      'valid',
+      60,
+      120,
+      apiTokenInvalidTestCases[3],
+      undefined,
+      'debug',
+    ],
+    [
+      'valid',
+      'valid',
+      60,
+      120,
+      apiTokenInvalidTestCases[4],
+      undefined,
+      'debug',
+    ],
+    [
+      'valid',
+      'valid',
+      60,
+      120,
+      apiTokenInvalidTestCases[5],
+      undefined,
+      'debug',
+    ],
+    [
+      'valid',
+      'valid',
+      60,
+      120,
+      apiTokenInvalidTestCases[6],
+      undefined,
+      'debug',
+    ],
+    [
+      'valid',
+      'valid',
+      60,
+      120,
+      apiTokenInvalidTestCases[7],
+      undefined,
+      'debug',
+    ],
+    ['valid', 'valid', 0, 120, mockReadFileSyncValue, undefined, 'debug'],
+    [
+      'valid',
+      'valid',
+      120,
       'SomethingNotNumeric',
       mockReadFileSyncValue,
       undefined,
@@ -187,16 +282,38 @@ describe('App Configuration', () => {
       'valid',
       'valid',
       'SomethingNotNumeric',
+      120,
+      mockReadFileSyncValue,
+      undefined,
+      'unknown',
+    ],
+    ['valid', 'valid', 120, 0, mockReadFileSyncValue, undefined, 'debug'],
+    [
+      'valid',
+      'valid',
+      120,
+      'SomethingNotNumeric',
+      mockReadFileSyncValue,
+      undefined,
+      'debug',
+    ],
+    [
+      'valid',
+      'valid',
+      120,
+      'SomethingNotNumeric',
       mockReadFileSyncValue,
       undefined,
       'unknown',
     ],
   ]).it(
-    'should invalidate: { PROJECT_LABEL: "%p", INSTANCE_ID: "%p", EXECUTION_FREQUENCY_SECONDS: "%p", API_TOKEN: "%p", API_TOKEN_FILE: "%p", LOG_LEVEL: "%p" }',
+    `should invalidate: { PROJECT_LABEL: "%p", INSTANCE_ID: "%p", EXECUTION_FREQUENCY_SECONDS: "%p", 
+    DDNS_EXECUTION_FREQUENCY_MINUTES: "%p", API_TOKEN: "%p", API_TOKEN_FILE: "%p", LOG_LEVEL: "%p" }`,
     async (
       projectLabel,
       instanceId,
       executionFrequencySeconds,
+      ddnsExecutionFrequencyMinutes,
       apiToken,
       apiTokenFile,
       logLevel,
@@ -205,6 +322,8 @@ describe('App Configuration', () => {
       process.env.PROJECT_LABEL = projectLabel;
       process.env.INSTANCE_ID = instanceId;
       process.env.EXECUTION_FREQUENCY_SECONDS = executionFrequencySeconds;
+      process.env.DDNS_EXECUTION_FREQUENCY_MINUTES =
+        ddnsExecutionFrequencyMinutes;
       setEnvironmentVariable('API_TOKEN', apiToken);
       setEnvironmentVariable('API_TOKEN_FILE', apiTokenFile);
       process.env.LOG_LEVEL = logLevel;
@@ -219,6 +338,7 @@ describe('App Configuration', () => {
     delete process.env.PROJECT_LABEL;
     delete process.env.INSTANCE_ID;
     delete process.env.EXECUTION_FREQUENCY_SECONDS;
+    delete process.env.DDNS_EXECUTION_FREQUENCY_MINUTES;
     process.env.API_TOKEN = mockReadFileSyncValue;
     delete process.env.LOG_LEVEL;
 
@@ -231,6 +351,9 @@ describe('App Configuration', () => {
     );
     expect(sut.get('INSTANCE_ID', { infer: true })).toEqual('1');
     expect(sut.get('EXECUTION_FREQUENCY_SECONDS', { infer: true })).toEqual(60);
+    expect(
+      sut.get('DDNS_EXECUTION_FREQUENCY_MINUTES', { infer: true }),
+    ).toEqual(60);
     expect(sut.get('LOG_LEVEL', { infer: true })).toEqual('error');
   });
 
@@ -241,6 +364,7 @@ describe('App Configuration', () => {
       process.env.PROJECT_LABEL = element;
       process.env.INSTANCE_ID = element;
       process.env.EXECUTION_FREQUENCY_SECONDS = '';
+      process.env.DDNS_EXECUTION_FREQUENCY_MINUTES = '';
       process.env.API_TOKEN = mockReadFileSyncValue;
       process.env.LOG_LEVEL = element;
 
@@ -255,6 +379,9 @@ describe('App Configuration', () => {
       expect(sut.get('EXECUTION_FREQUENCY_SECONDS', { infer: true })).toEqual(
         60,
       );
+      expect(
+        sut.get('DDNS_EXECUTION_FREQUENCY_MINUTES', { infer: true }),
+      ).toEqual(60);
       expect(sut.get('LOG_LEVEL', { infer: true })).toEqual('error');
     },
   );

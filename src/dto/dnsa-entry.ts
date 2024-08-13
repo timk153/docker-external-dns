@@ -1,6 +1,7 @@
-import { IsIP } from 'class-validator';
+import { Validate } from 'class-validator';
 import { DnsbaseCloudflareProxyEntry } from './dnsbase-cloudflare-proxy-entry';
 import { DNSTypes, IHasDnsType } from './dnsbase-entry';
+import { IsIPOrDDNS } from '../validators/iporddns.validator';
 
 /**
  * Represents an A record
@@ -9,7 +10,7 @@ export class DnsaEntry extends DnsbaseCloudflareProxyEntry {
   /**
    * IP Address this DNSA record points to.
    */
-  @IsIP()
+  @Validate(IsIPOrDDNS)
   address: string;
 
   /**

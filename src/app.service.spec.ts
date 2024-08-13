@@ -3,6 +3,7 @@ import { createMock, DeepMocked } from '@golevelup/ts-jest';
 import { ContainerInfo } from 'dockerode';
 import { Zone } from 'cloudflare/resources/zones/zones';
 import { Record, RecordCreateParams } from 'cloudflare/resources/dns/records';
+import { ConfigService } from '@nestjs/config';
 import { AppService, State } from './app.service';
 import { DockerService } from './docker/docker.service';
 import { CloudFlareService } from './cloud-flare/cloud-flare.service';
@@ -16,6 +17,8 @@ import { isDnsCnameEntry } from './dto/dnscname-entry';
 import { isDnsMxEntry } from './dto/dnsmx-entry';
 import { isDnsNsEntry } from './dto/dnsns-entry';
 import { ConsoleLoggerService } from './logger.service';
+import { DdnsService } from './ddns/ddns.service';
+import { State as CronState } from './cron/cron.service';
 
 jest.mock('./app.functions');
 jest.mock('./dto/dnsa-entry', () => {
@@ -55,9 +58,10 @@ describe('AppService', () => {
     'container-1',
     'container-2',
   ] as unknown as ContainerInfo[];
+
   const mockDockerServiceExtractDNSEntriesValues = [
-    'extracted-docker-entry-1',
-    'extracted-docker-entry-2',
+    { name: 'extracted-docker-entry-1', address: 'not-ddns', type: DNSTypes.A },
+    { name: 'extracted-docker-entry-2', type: DNSTypes.CNAME },
   ] as unknown as DnsbaseEntry[];
   const mockCloudFlareServiceGetZonesValues = [
     { id: 'zone-1' },
@@ -161,6 +165,15 @@ describe('AppService', () => {
   let mockCloudFlareService: DeepMocked<CloudFlareService>;
   let mockCloudFlareFactory: DeepMocked<CloudFlareFactory>;
   let mockConsoleLoggerService: DeepMocked<ConsoleLoggerService>;
+  const envExecutionFrequencySeconds = 999;
+  let mockConfigService: DeepMocked<ConfigService>;
+  const mockConfigServiceGetValue = {
+    EXECUTION_FREQUENCY_SECONDS: envExecutionFrequencySeconds,
+  };
+  let mockDdnsService: DeepMocked<DdnsService>;
+  let mockDdnsServiceIsDdnsRequiredValue = false;
+  const mockDdnsServiceGetIPAddressValue = 'ddns-service-ip-address';
+  let mockDdnsServiceGetStateValue = CronState.Stopped;
 
   beforeAll(() => {
     mockAppFunctionsComputeSetDifference.mockReturnValue(
@@ -216,6 +229,23 @@ describe('AppService', () => {
 
     mockConsoleLoggerService = module.get(ConsoleLoggerService);
 
+    mockConfigService = module.get(ConfigService) as DeepMocked<ConfigService>;
+    mockConfigService.get.mockImplementation(
+      (propertyPath) => mockConfigServiceGetValue[propertyPath],
+    );
+
+    mockDdnsService = module.get(DdnsService) as DeepMocked<DdnsService>;
+    mockDdnsServiceIsDdnsRequiredValue = false;
+    mockDdnsService.isDdnsRequired.mockImplementation(
+      () => mockDdnsServiceIsDdnsRequiredValue,
+    );
+    mockDdnsService.getIPAddress.mockImplementation(
+      () => mockDdnsServiceGetIPAddressValue,
+    );
+    mockDdnsService.getState.mockImplementation(
+      () => mockDdnsServiceGetStateValue,
+    );
+
     sut = module.get<AppService>(AppService);
 
     jest.clearAllMocks();
@@ -223,6 +253,24 @@ describe('AppService', () => {
 
   it('should be defined', () => {
     expect(sut).toBeDefined();
+  });
+
+  it('should have correct service name', () => {
+    expect(sut.ServiceName).toEqual('AppService');
+  });
+
+  describe('ExecutionIntervalSeconds property', () => {
+    it('should load property from configuration', () => {
+      // act / assert
+      expect(sut.ExecutionFrequencySeconds).toEqual(
+        envExecutionFrequencySeconds,
+      );
+      expect(mockConfigService.get).toHaveBeenCalledTimes(1);
+      expect(mockConfigService.get).toHaveBeenCalledWith(
+        'EXECUTION_FREQUENCY_SECONDS',
+        { infer: true },
+      );
+    });
   });
 
   describe('initialize', () => {
@@ -328,12 +376,12 @@ describe('AppService', () => {
       sut['state'] = State.Uninitialized;
 
       // act / assert
-      await expect(sut.synchronise()).rejects.toThrow(expected);
+      await expect(sut.job()).rejects.toThrow(expected);
       expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
       expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
         expect.objectContaining({
           level: 'error',
-          method: 'synchronise',
+          method: 'job',
           service: 'AppService',
           params: '[]',
         }),
@@ -345,14 +393,14 @@ describe('AppService', () => {
       mockCloudFlareService.getZones.mockResolvedValueOnce([]);
 
       // act / assert
-      await expect(sut.synchronise()).rejects.toThrow(
+      await expect(sut.job()).rejects.toThrow(
         'AppService, synchronize: No zones returned from CloudFlare. Check API Token has Zone access and you have zones registered to your account',
       );
       expect(mockConsoleLoggerService.error).toHaveBeenCalledTimes(1);
       expect(mockConsoleLoggerService.error).toHaveBeenCalledWith(
         expect.objectContaining({
           level: 'error',
-          method: 'synchronise',
+          method: 'job',
           service: 'AppService',
           params: '[]',
         }),
@@ -361,7 +409,7 @@ describe('AppService', () => {
 
     it('should synchronize', async () => {
       // act
-      await sut.synchronise();
+      await sut.job();
 
       // assert
       expect(mockDockerService.initialize).not.toHaveBeenCalled();
@@ -389,6 +437,12 @@ describe('AppService', () => {
         mockCloudFlareServiceGetZonesValues[2].id,
         mockCloudFlareServiceGetDNSEntriesValues['zone-3'],
       );
+      expect(mockDdnsService.isDdnsRequired).toHaveBeenCalledTimes(1);
+      expect(mockDdnsService.isDdnsRequired).toHaveBeenCalledWith(
+        mockDockerServiceExtractDNSEntriesValues,
+      );
+      expect(mockDdnsService.start).not.toHaveBeenCalled();
+      expect(mockDdnsService.stop).not.toHaveBeenCalled();
       expect(mockAppFunctionsComputeSetDifference).toHaveBeenCalledTimes(1);
       expect(mockAppFunctionsComputeSetDifference).toHaveBeenCalledWith(
         mockDockerServiceExtractDNSEntriesValues,
@@ -485,7 +539,7 @@ describe('AppService', () => {
       expect(mockConsoleLoggerService.debug).toHaveBeenCalledWith(
         expect.objectContaining({
           level: 'debug',
-          method: 'synchronise',
+          method: 'job',
           service: 'AppService',
           params: '[]',
         }),
@@ -494,6 +548,126 @@ describe('AppService', () => {
       expect(mockConsoleLoggerService.log).toHaveBeenCalledWith(
         `Synchronisation complete, entries changed: Added 4, Updated 4, Deleted 2, Unchanged 1`,
       );
+    });
+
+    describe('DDNS enabled', () => {
+      const ddnsEntryOne = {
+        name: 'test-ddns-1',
+        type: DNSTypes.A,
+        address: 'DDNS',
+      } as unknown as DnsbaseEntry;
+      const ddnsEntryOneExpected = {
+        ...ddnsEntryOne,
+        address: mockDdnsServiceGetIPAddressValue,
+      };
+      const ddnsEntryTwo = {
+        name: 'test-ddns-2',
+        type: DNSTypes.A,
+        address: 'DDNS',
+      } as unknown as DnsbaseEntry;
+      const ddnsEntryTwoExpected = {
+        ...ddnsEntryTwo,
+        address: mockDdnsServiceGetIPAddressValue,
+      };
+
+      beforeEach(() => {
+        mockDockerService.extractDNSEntries.mockReturnValue([
+          ddnsEntryOne,
+          ...mockDockerServiceExtractDNSEntriesValues,
+          ddnsEntryTwo,
+        ]);
+        mockIsDnsAEntry.mockImplementation(
+          (entry) => entry.type === DNSTypes.A,
+        );
+      });
+
+      it('Should synchronize with DDNS, starting DDNS service', async () => {
+        // arrange
+        mockDdnsServiceIsDdnsRequiredValue = true;
+        mockDdnsServiceGetStateValue = CronState.Stopped;
+
+        // act
+        await sut.job();
+
+        // assert
+        expect(mockDdnsService.getState).toHaveBeenCalledTimes(1);
+        expect(mockDdnsService.start).toHaveBeenCalledTimes(1);
+        expect(mockDdnsService.stop).not.toHaveBeenCalled();
+        expect(mockDdnsService.getIPAddress).toHaveBeenCalledTimes(1);
+        expect(mockAppFunctionsComputeSetDifference).toHaveBeenCalledWith(
+          [
+            ddnsEntryOneExpected,
+            ...mockDockerServiceExtractDNSEntriesValues,
+            ddnsEntryTwoExpected,
+          ],
+          expect.any(Array),
+        );
+      });
+
+      it('Should syncrhonize with DDNS, but not start service if already started', async () => {
+        // arrange
+        mockDdnsServiceIsDdnsRequiredValue = true;
+        mockDdnsServiceGetStateValue = CronState.Started;
+
+        // act
+        await sut.job();
+
+        // assert
+        expect(mockDdnsService.start).not.toHaveBeenCalled();
+        expect(mockDdnsService.stop).not.toHaveBeenCalled();
+        expect(mockDdnsService.getIPAddress).toHaveBeenCalledTimes(1);
+        expect(mockAppFunctionsComputeSetDifference).toHaveBeenCalledWith(
+          [
+            ddnsEntryOneExpected,
+            ...mockDockerServiceExtractDNSEntriesValues,
+            ddnsEntryTwoExpected,
+          ],
+          expect.any(Array),
+        );
+      });
+
+      it('Should stop synchronizing with DDNS if no longer required', async () => {
+        // arrange
+        mockDdnsServiceGetStateValue = CronState.Started;
+        mockDdnsServiceIsDdnsRequiredValue = false;
+        mockDockerService.extractDNSEntries.mockReturnValue(
+          mockDockerServiceExtractDNSEntriesValues,
+        );
+
+        // act
+        await sut.job();
+
+        // assert
+        expect(mockDdnsService.start).not.toHaveBeenCalled();
+        expect(mockDdnsService.stop).toHaveBeenCalledTimes(1);
+        expect(mockDdnsService.getIPAddress).not.toHaveBeenCalled();
+        expect(mockAppFunctionsComputeSetDifference).toHaveBeenCalledWith(
+          mockDockerServiceExtractDNSEntriesValues,
+          expect.any(Array),
+        );
+      });
+
+      it('Should filter out entries and post a warning if IPAddress is undefined', async () => {
+        // arrange
+        mockDdnsServiceIsDdnsRequiredValue = true;
+        mockDdnsServiceGetStateValue = CronState.Started;
+        mockDdnsService.getIPAddress.mockReturnValueOnce(undefined);
+
+        // act
+        await sut.job();
+
+        // assert
+        expect(mockDdnsService.getIPAddress).toHaveBeenCalledTimes(1);
+        expect(mockAppFunctionsComputeSetDifference).toHaveBeenCalledWith(
+          mockDockerServiceExtractDNSEntriesValues,
+          expect.any(Array),
+        );
+        expect(mockConsoleLoggerService.warn).toHaveBeenCalledTimes(1);
+        expect(mockConsoleLoggerService.warn).toHaveBeenCalledWith(
+          `DDNS, IPAddress has yet to be fetched successfully. DDNS records have been filtered out. 
+          They'll be added in automatically once an IPAddress has been fetched.`,
+        );
+      });
     });
   });
 

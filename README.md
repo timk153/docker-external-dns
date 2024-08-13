@@ -15,6 +15,7 @@ This project does the following:
   The labels contain DNS information.
 - Synchronises those records to CloudFlare
 - Runs at a regular interval (like a CRON job but interval is only programmable in seconds)
+- Supports DDNS (ipv4 only)
 - Supports multiple instances with different configurations
 - Writes identification comments to determine which records it controls
 - Supports the following record types only:
@@ -27,8 +28,15 @@ This project does the following:
 
 ## License
 
-This project is personal, but uses NEST.<br/>
-Nest is [MIT licensed](LICENSE).
+MIT License
+
+Copyright (c) 2024 Timothy Kilminster
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # User guide
 
@@ -63,14 +71,15 @@ This file comprises the following sections:
 The container is configured via environment variables. The following table describes the variable name, its default value (if any), and what it does.
 Detailed examples are available in the [Examples](#examples) section.
 
-| Variable Name               | Default Value               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| --------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PROJECT_LABEL               | docker-compose-external-dns | Detailed example available in the [project Label and Instance ID section](#project_label-and-instance_id) section.<br/><br/>Forms part of the label the project looks for on Docker containers to interpret as DNS entries. Also written as a comment to Cloudflare DNS entries managed by this instance of the project.                                                                                                                                    |
-| INSTANCE_ID                 | 1                           | Detailed example available in the [project Label and Instance ID section](#project_label-and-instance_id) section.<br/><br/>Forms part of the label the project looks for on Docker containers to interpret as DNS entries. Also written as a comment to Cloudflare DNS entries managed by this instance of the project.                                                                                                                                    |
-| EXECUTION_FREQUENCY_SECONDS | 60                          | How frequently the CRON job should execute to detect changes. Default is every 60 seconds. Undefined or empty uses the default. Minimum is every 1 second. There is no maximum. This must be an integer.                                                                                                                                                                                                                                                    |
-| API_TOKEN                   |                             | You must supply either API_TOKEN or API_TOKEN_FILE but not both.<br/><br/>Your API token from Cloudflare. Must be granted Zone.Zone read and Zone.DNS edit.<br/><br/><span style="color: red; font-weight:bold">IMPORTANT</span> Use of this property is insecure as your API_TOKEN will be in plain text. It is recommended you use API_TOKEN_FILE. Use at your own risk.                                                                                  |
-| API_TOKEN_FILE              |                             | You must supply either API_TOKEN or API_TOKEN_FILE but not both.<br/><br/>Secure way to share your Cloudflare API Token with the project. Recommended approach for Docker Swarm. Compatible with Docker Compose (but less secure).<br/><br/>Read Docker Compose docs for more information: [Docker Compose Secrets](https://docs.docker.com/compose/use-secrets/)                                                                                           |
-| LOG_LEVEL                   | error                       | The current logging level. The default is error, meaning only errors and fatal get logged.<br/><br/>Each level includes the levels above it from most specific to least specific. By way of example, verbose will output everything. debug will ignore verbose. log will ignore debug and verbose.<br/><br/>From most specific to least:</br>fatal<br/>error<br/>warn<br/>log<br/>debug<br/>verbose<br/><br/>These log levels come from the NestJS project. |
+| Variable Name                    | Default Value               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PROJECT_LABEL                    | docker-compose-external-dns | Detailed example available in the [project Label and Instance ID section](#project_label-and-instance_id) section.<br/><br/>Forms part of the label the project looks for on Docker containers to interpret as DNS entries. Also written as a comment to Cloudflare DNS entries managed by this instance of the project.                                                                                                                                    |
+| INSTANCE_ID                      | 1                           | Detailed example available in the [project Label and Instance ID section](#project_label-and-instance_id) section.<br/><br/>Forms part of the label the project looks for on Docker containers to interpret as DNS entries. Also written as a comment to Cloudflare DNS entries managed by this instance of the project.                                                                                                                                    |
+| EXECUTION_FREQUENCY_SECONDS      | 60                          | How frequently the CRON job should execute to detect changes. Default is every 60 seconds. Undefined or empty uses the default. Minimum is every 1 second. There is no maximum. This must be an integer.                                                                                                                                                                                                                                                    |
+| DDNS_EXECUTION_FREQUENCY_MINUTES | 60                          | Determines how frequently the DDNS Service checks for a new public IP address. This setting only applies if you're using DDNS otherwise the service will not be started.                                                                                                                                                                                                                                                                                    |
+| API_TOKEN                        |                             | You must supply either API_TOKEN or API_TOKEN_FILE but not both.<br/><br/>Your API token from Cloudflare. Must be granted Zone.Zone read and Zone.DNS edit.<br/><br/><span style="color: red; font-weight:bold">IMPORTANT</span> Use of this property is insecure as your API_TOKEN will be in plain text. It is recommended you use API_TOKEN_FILE. Use at your own risk.                                                                                  |
+| API_TOKEN_FILE                   |                             | You must supply either API_TOKEN or API_TOKEN_FILE but not both.<br/><br/>Secure way to share your Cloudflare API Token with the project. Recommended approach for Docker Swarm. Compatible with Docker Compose (but less secure).<br/><br/>Read Docker Compose docs for more information: [Docker Compose Secrets](https://docs.docker.com/compose/use-secrets/)                                                                                           |
+| LOG_LEVEL                        | error                       | The current logging level. The default is error, meaning only errors and fatal get logged.<br/><br/>Each level includes the levels above it from most specific to least specific. By way of example, verbose will output everything. debug will ignore verbose. log will ignore debug and verbose.<br/><br/>From most specific to least:</br>fatal<br/>error<br/>warn<br/>log<br/>debug<br/>verbose<br/><br/>These log levels come from the NestJS project. |
 
 #### PROJECT_LABEL and INSTANCE_ID
 
@@ -105,12 +114,12 @@ Lookup of example.com returns 8.8.8.8<br/>
 
 The properties required for this entry are as follows:
 
-| property | value                               | description                                                                                                                                                                                                                                                      |
-| -------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| type     | A                                   | The type of the record. In this case it should be A                                                                                                                                                                                                              |
-| name     | \<your domain name\>                | This is the domain you want this A record to resolve for. For example: example-domain.com                                                                                                                                                                        |
-| address  | \<your server's address (v4 or 6)\> | The address you want your domain name to resolve to                                                                                                                                                                                                              |
-| proxy    | true or false                       | True uses Cloudflare's proxy to hide your address. False causes Cloudflare to act as a normal DNS server.<br/><br/>Documentation: [Proxied DNS Records](https://developers.cloudflare.com/dns/manage-dns-records/reference/proxied-dns-records/#proxied-records) |
+| property | value                                         | description                                                                                                                                                                                                                                                      |
+| -------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| type     | A                                             | The type of the record. In this case it should be A                                                                                                                                                                                                              |
+| name     | \<your domain name\>                          | This is the domain you want this A record to resolve for. For example: example-domain.com                                                                                                                                                                        |
+| address  | \<your server's address (v4 or 6)\> OR "DDNS" | The address you want your domain name to resolve to.</br> Or the string literal "DDNS" which instructs the project to compute your current public ipv4 address and use it for this record.                                                                       |
+| proxy    | true or false                                 | True uses Cloudflare's proxy to hide your address. False causes Cloudflare to act as a normal DNS server.<br/><br/>Documentation: [Proxied DNS Records](https://developers.cloudflare.com/dns/manage-dns-records/reference/proxied-dns-records/#proxied-records) |
 
 #### CNAME
 
@@ -415,6 +424,31 @@ services:
 
 Explanation: This example configures an A record for my-domain.com pointing to 8.8.8.8 without using Cloudflare's proxy.
 
+##### DDNS Variant
+
+<span style="color: red; font-weight: bold;">IMPORTANT</span> example uses insecure option "API_TOKEN" for simplicity.
+
+```yaml
+services:
+  docker-compose-external-dns:
+    image: 'docker-compose-external-dns:latest'
+    environment:
+      - API_TOKEN=<your api token here>
+    volumes:
+      # Used to read labels from containers - readonly
+      - '/var/run/docker.sock:/var/run/docker.sock:ro'
+
+  other-service:
+    image: 'busybox:latest'
+    command: 'sleep 3600'
+    labels:
+      - 'docker-compose-external-dns:1=[{ "type": "A", "name": "my-domain.com", "address": "DDNS", "proxy": false }]'
+```
+
+Explanation: This example configures an A record for my-domain.com. The project will start the DDNS Service when this record is processed. The service will fetch your current public ipv4 address and use it for this record. The DDNS Service will check at regular intervals for a new ipv4 address. If one is detected then this record will be updated to the new value when the next DNS synchronisation interval is reached.
+
+Settings to control interval are explained in the [configuration section](#configuration).
+
 #### CNAME
 
 <span style="color: red; font-weight: bold;">IMPORTANT</span> example uses insecure option "API_TOKEN" for simplicity.
@@ -509,7 +543,7 @@ services:
     command: 'sleep 3600'
     labels:
       - 'docker-compose-external-dns:1=[
-        { "type": "A", "name": "my-domain.com", "address": "8.8.8.8", "proxy": false },
+        { "type": "A", "name": "my-domain.com", "address": "DDNS", "proxy": false },
         { "type": "CNAME", "name": "mx1.my-domain.com", "target": "my-domain.com", "proxy": false },
         { "type": "MX", "name": "my-domain.com", "server": "mx1.my-domain.com", "priority": 0 },
         { "type": "CNAME", "name": "subdomain.my-domain.com", "target": "my-domain.com", "proxy": false },

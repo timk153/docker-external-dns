@@ -1,7 +1,4 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { setTimeout, clearTimeout } from 'timers';
-import { AppService } from '../app.service';
+import { OnModuleDestroy } from '@nestjs/common';
 import { getLogClassDecorator } from '../utility.functions';
 import { ConsoleLoggerService } from '../logger.service';
 
@@ -14,19 +11,30 @@ export enum State {
 }
 
 @LogDecorator()
-@Injectable()
-export class CronService implements OnModuleDestroy {
-  private state = State.Stopped;
+export abstract class CronService implements OnModuleDestroy {
+  protected stateCron = State.Stopped;
 
   private startedTimeoutToken?: NodeJS.Timeout;
 
-  constructor(
-    private configService: ConfigService,
-    private appService: AppService,
-    private loggerService: ConsoleLoggerService,
-  ) {
+  constructor(protected loggerService: ConsoleLoggerService) {
     loggerPointer = this.loggerService;
   }
+
+  /**
+   * Returns how frequently the job will be executed in seconds
+   */
+  abstract get ExecutionFrequencySeconds(): number;
+
+  /**
+   * The service name which will appear in log messages
+   */
+  abstract get ServiceName(): string;
+
+  /**
+   * The job which will be executed by the cron job.
+   * Must be implemented by the derived class
+   */
+  abstract job(): Promise<void>;
 
   /**
    * Starts the CRON Job executing.
@@ -34,27 +42,23 @@ export class CronService implements OnModuleDestroy {
    * as distated by the environment variable EXECUTION_FREQUENCY_SECONDS.
    * @throws {Error} If service is already started
    */
-  start() {
-    if (this.state === State.Started)
-      throw new Error('CronService, start: Service already started');
-    const interval = this.configService.get<number>(
-      'EXECUTION_FREQUENCY_SECONDS',
-      {
-        infer: true,
-      },
-    );
+  async start() {
+    if (this.stateCron === State.Started)
+      throw new Error(
+        `CronService (${this.ServiceName}), start: Service already started`,
+      );
     this.loggerService.log(
-      `Staring CRON job, execution frequency is every ${interval} seconds`,
+      `Staring CRON job for ${this.ServiceName}, execution frequency is every ${this.ExecutionFrequencySeconds} seconds`,
     );
-    this.appService.synchronise();
+    await this.job();
     const queue = () => {
-      this.startedTimeoutToken = setTimeout(() => {
-        this.appService.synchronise();
+      this.startedTimeoutToken = setTimeout(async () => {
+        await this.job();
         queue();
-      }, interval * 1000);
+      }, this.ExecutionFrequencySeconds * 1000);
     };
     queue();
-    this.state = State.Started;
+    this.stateCron = State.Started;
   }
 
   /**
@@ -62,11 +66,13 @@ export class CronService implements OnModuleDestroy {
    * @throws {Error} if CRON job is not running.
    */
   stop() {
-    if (this.state === State.Stopped)
-      throw Error('CronService, stop: Service already stopped');
-    this.loggerService.log('Stopping CRON job');
+    if (this.stateCron === State.Stopped)
+      throw Error(
+        `CronService (${this.ServiceName}), stop: Service already stopped`,
+      );
+    this.loggerService.log(`Stopping CRON job for ${this.ServiceName}`);
     clearTimeout(this.startedTimeoutToken);
-    this.state = State.Stopped;
+    this.stateCron = State.Stopped;
   }
 
   /**

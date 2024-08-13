@@ -44,6 +44,7 @@ describe('DnsaEntry', () => {
 
         // act / assert
         expect(entry.hasSameValue(compare)).toBe(true);
+        expect(entry.Key).not.toEqual(compare.Key);
       },
     );
 
@@ -51,10 +52,12 @@ describe('DnsaEntry', () => {
       'should have the same value and identity (type %p)',
       (type) => {
         // arrange
-        const result = validDnsAEntry(type);
+        const entry = validDnsAEntry(type);
+        const compare = validDnsAEntry(type);
 
         // act
-        expect(result.hasSameValue(result)).toBe(true);
+        expect(entry.hasSameValue(compare)).toBe(true);
+        expect(entry.Key).toEqual(compare.Key);
       },
     );
 
@@ -78,6 +81,7 @@ describe('DnsaEntry', () => {
 
         // act / assert
         expect(entry.hasSameValue(compare)).toBe(false);
+        expect(entry.Key).not.toEqual(compare.Key);
       },
     );
 
@@ -99,44 +103,46 @@ describe('DnsaEntry', () => {
 
         // act
         expect(entry.hasSameValue(compare)).toBe(false);
+        expect(entry.Key).toEqual(compare.Key);
       },
     );
   });
 
   describe('validation', () => {
-    it('should be valid', async () => {
-      // act / assert
-      expect(validate(sut)).resolves.toHaveLength(0);
-    });
-
     describe('address', () => {
-      each([
-        '192.168.0.53',
-        '2001:0db8:85a3:0000:0000:8a2e:0370:7334',
-        '2001:db8:85a3::8a2e:370:7334',
-      ]).it('should be a valid address (%p)', async (address) => {
+      /**
+       * Unit testing the validator decorators are tricky.
+       * This is a small integration test to ensure the basic behavior is working.
+       * This gives confidence the decorator is being used.
+       */
+
+      it('should be valid - DDNS', async () => {
         // arrange
-        sut.address = address;
+        sut.address = 'DDNS';
 
         // act / assert
-        expect(validate(sut)).resolves.toHaveLength(0);
+        await expect(validate(sut)).resolves.toHaveLength(0);
       });
 
-      each(['a', 'em', '', '   ', '123', 'test@thing.com']).it(
-        'should not be an invalid string (%p)',
-        async (invalid) => {
-          // arrange
-          sut.address = invalid;
+      it('should be valid - IP', async () => {
+        // arrange
+        sut.address = '8.8.8.8';
 
-          // act
-          const result = await validate(sut);
+        // act / assert
+        await expect(validate(sut)).resolves.toHaveLength(0);
+      });
 
-          // assert
-          expect(result).toHaveLength(1);
-          expect(result[0].property).toBe('address');
-          expect(result[0].value).toBe(invalid);
-        },
-      );
+      it('should be invalid', async () => {
+        // arrange
+        sut.address = 'invalid';
+
+        // act / assert
+        const result = await validate(sut);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].property).toEqual('address');
+        expect(result[0].value).toEqual(sut.address);
+      });
     });
   });
 });

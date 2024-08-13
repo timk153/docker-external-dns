@@ -43,6 +43,7 @@ describe('DnsCnameEntry', () => {
 
         // act / assert
         expect(entry.hasSameValue(compare)).toBe(true);
+        expect(entry.Key).not.toEqual(compare.Key);
       },
     );
 
@@ -50,10 +51,12 @@ describe('DnsCnameEntry', () => {
       'should have the same value and identity (type %p)',
       (type) => {
         // arrange
-        const result = validDnsCnameEntry(type);
+        const entry = validDnsCnameEntry(type);
+        const compare = validDnsCnameEntry(type);
 
         // act
-        expect(result.hasSameValue(result)).toBe(true);
+        expect(entry.hasSameValue(compare)).toBe(true);
+        expect(entry.Key).toEqual(compare.Key);
       },
     );
 
@@ -77,6 +80,7 @@ describe('DnsCnameEntry', () => {
 
         // act / assert
         expect(entry.hasSameValue(compare)).toBe(false);
+        expect(entry.Key).not.toEqual(compare.Key);
       },
     );
 
@@ -98,6 +102,7 @@ describe('DnsCnameEntry', () => {
 
         // act
         expect(entry.hasSameValue(compare)).toBe(false);
+        expect(entry.Key).toEqual(compare.Key);
       },
     );
   });

@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AppService } from './app.service';
-import { CronService } from './cron/cron.service';
 import { ConsoleLoggerService } from './logger.service';
 
 /**
@@ -17,8 +16,7 @@ async function bootstrap() {
   app.useLogger(await app.resolve(ConsoleLoggerService));
   app.enableShutdownHooks();
   const appService = app.get(AppService);
-  const cronService = app.get(CronService);
   appService.initialize();
-  cronService.start();
+  appService.start();
 }
 bootstrap();

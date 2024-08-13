@@ -404,7 +404,7 @@ describe('AppService (Integration)', () => {
 
   it('should synchronize', async () => {
     // act
-    await sut.synchronise();
+    await sut.job();
 
     // assert
     expect(mockCloudflareInstance.dns.records.create).toHaveBeenCalledTimes(8);
