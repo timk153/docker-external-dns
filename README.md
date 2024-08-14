@@ -1,3 +1,5 @@
+![tests badge](https://img.shields.io/endpoint?url=https://gist.github.com/timk153/26bea053b867128f6f37f5aac0ddcf8b#file-docker-external-dns-junit-tests-json) ![coverage badge](https://img.shields.io/endpoint?url=https://gist.github.com/timk153/26bea053b867128f6f37f5aac0ddcf8b#file-docker-external-dns-cobertura-coverage-json)
+
 # Docker Compose external DNS (dc-external-dns)
 
 This project was inspired by:
