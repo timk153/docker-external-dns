@@ -37,7 +37,7 @@ jobs:
       - uses: 5monkeys/cobertura-action@master
         name: Publish Coverage
         with:
-          path: ./output/reports/*cobertura*.xml
+          path: './output/reports/*cobertura*.xml'
           minimum_coverage: 75
           fail_below_threshold: true
       
