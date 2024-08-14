@@ -32,7 +32,7 @@ jobs:
         if: success() || failure()
         with:
           report_paths: './output/reports/*junit*.xml'
-          fail_on_failure:
+          fail_on_failure: true
           include_passed: true
       
       
