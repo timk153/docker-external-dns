@@ -33,7 +33,7 @@ jobs:
         with:
           report_paths: './output/reports/*junit*.xml'
           fail_on_failure:
-          include_passed:
+          include_passed: true
       
       
 
