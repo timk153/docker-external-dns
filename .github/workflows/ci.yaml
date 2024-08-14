@@ -41,6 +41,9 @@ jobs:
           path: './output/reports/*cobertura*.xml'
           minimum_coverage: 75
           fail_below_threshold: true
-      
-      
+      - uses: gaelgirodon/ci-badges-action@v1
+        with:
+          gist-id: 26bea053b867128f6f37f5aac0ddcf8b
+          token: ${{ secrets.GIST_TOKEN }}
+              
 
