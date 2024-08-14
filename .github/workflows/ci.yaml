@@ -34,6 +34,12 @@ jobs:
           report_paths: './output/reports/*junit*.xml'
           fail_on_failure: true
           include_passed: true
+      - uses: 5monkeys/cobertura-action@master
+        name: Publish Coverage
+        with:
+          path: ./output/reports/*cobertura*.xml
+          minimum_coverage: 75
+          fail_below_threshold: true
       
       
 
