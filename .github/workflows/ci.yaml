@@ -1,0 +1,37 @@
+name: Continous Integration
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+jobs:
+  quality_gateway:
+    name: Quality Gateway
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout
+      - uses: Amadevus/pwsh-script@v2
+        name: "Docker: generating quality reports (testing & linting)"
+        id: script
+        with:
+          script: |
+           $identity = New-Guid
+            $name = "docker-compose-external-dns.quality.$identity"
+            docker build --target tests --tag $name .
+            docker run -v /var/run/docker.sock:/var/run/docker.sock --name $name -a stdin -a stdout -a stderr $name
+            mkdir output
+            docker cp "$($name):/app/src" "./output/src"
+            docker cp "$($name):/app/reports" "./output/reports"
+            docker container rm $name
+            docker image rm $name
+      - uses: actions/upload-artifact@v4
+        name: Upload JUnit Reports
+        with:
+          path: ./output/reports/*junit*.xml
+      - uses: actions/upload-artifact@v4
+        name: Upload Cobertura Reports
+        with:
+          path: ./output/reports/*cobertura*.xml
+      
+
