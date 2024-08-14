@@ -1,5 +1,5 @@
 # Get node image needed for development & building
-FROM node:20.15 as base
+FROM node:lts-alpine as base
 
 # Install
 FROM base as install
