@@ -25,13 +25,12 @@ jobs:
             docker cp "$($name):/app/reports" "./output/reports"
             docker container rm $name
             docker image rm $name
-      - uses: actions/upload-artifact@v4
-        name: Upload JUnit Reports
+            - name: Publish Test Report
+      - uses: mikepenz/action-junit-report@v4
+        if: success() || failure()
         with:
-          path: ./output/reports/*junit*.xml
-      - uses: actions/upload-artifact@v4
-        name: Upload Cobertura Reports
-        with:
-          path: ./output/reports/*cobertura*.xml
+          report_paths: './output/reports/*junit*.xml'
+          fail_on_failure:
+      
       
 
