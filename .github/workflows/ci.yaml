@@ -26,9 +26,9 @@ jobs:
             docker cp "$($name):/app/src" "./output/src"
             docker cp "$($name):/app/reports" "./output/reports"
             docker container rm $name
-            docker image rm $name
-            - name: Publish Test Report
+            docker image rm $name  
       - uses: mikepenz/action-junit-report@v4
+        name: Publish Test Report
         if: success() || failure()
         with:
           report_paths: './output/reports/*junit*.xml'
