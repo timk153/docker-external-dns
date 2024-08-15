@@ -9,8 +9,10 @@ jobs:
   deployment:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         name: Checkout
+        with:
+          fetch-depth: 0
       - uses: Amadevus/pwsh-script@97a8b211a5922816aa8a69ced41fa32f23477186
         name: 'Docker: generating quality reports (testing & linting)'
         id: compute-versions
