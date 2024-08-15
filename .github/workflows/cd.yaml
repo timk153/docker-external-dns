@@ -1,0 +1,53 @@
+name: Publish to DockerHub
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: Amadevus/pwsh-script@97a8b211a5922816aa8a69ced41fa32f23477186
+        name: 'Docker: generating quality reports (testing & linting)'
+        id: compute-versions
+        with:
+          script: |
+            $gitVersion = git describe
+            $latestMajorTag = ''
+            $latestTag = ''
+            if ($gitVersion -match '^\d.\d.\d$') {
+              # get all tags in semver order oldest to newest
+              $tags = git tag -l --sort=version:refname  | Where-Object { $_ -Match '^\d\.\d\.\d$' }
+              # get the latest released semver
+              $latestVersion = $tags[$tags.Count - 1]
+              # get the latest released semver for the tag being processed
+              $majorVersionMatch =  $gitVersion | Select-String -Pattern '^\d+(?=\.)'
+              $majorVersion = $majorVersionMatch.Matches[0].Value
+              # get latest for this major version
+              $latestMajorVersion = $tags | Where-Object { $_ -Match "^$($majorVersion)(?=\.)" } | Select-Object -Last 1
+              # compute latest tag
+              if([version]$gitVersion -ge [version]$latestMajorVersion) {
+                # it's equal to or greater than
+                # add latest tag to output
+                $latestMajorTag = ", tkilminster/docker-external-dns:$($majorVersion)-latest"
+              }
+              if([version]$gitVersion -ge [version]$latestVersion) {
+                $latestTag = ', tkilminster/docker-external-dns:latest'
+              }
+            }
+            return "tkilminster/docker-external-dns:$($gitVersion)$($latestMajorTag)$(latestTag)"
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ${{ steps.compute-versions.outputs.result }}

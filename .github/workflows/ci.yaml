@@ -20,14 +20,14 @@ jobs:
         with:
           script: |
             $identity = New-Guid
-             $name = "docker-compose-external-dns.quality.$identity"
-             docker build --target tests --tag $name .
-             docker run -u root -v /var/run/docker.sock:/var/run/docker.sock --name $name -a stdin -a stdout -a stderr $name
-             mkdir output
-             docker cp "$($name):/app/src" "./output/src"
-             docker cp "$($name):/app/reports" "./output/reports"
-             docker container rm $name
-             docker image rm $name
+            $name = "docker-compose-external-dns.quality.$identity"
+            docker build --target tests --tag $name .
+            docker run -u root -v /var/run/docker.sock:/var/run/docker.sock --name $name -a stdin -a stdout -a stderr $name
+            mkdir output
+            docker cp "$($name):/app/src" "./output/src"
+            docker cp "$($name):/app/reports" "./output/reports"
+            docker container rm $name
+            docker image rm $name
       - uses: mikepenz/action-junit-report@db71d41eb79864e25ab0337e395c352e84523afe
         name: Publish Test Report
         if: success() || failure()
