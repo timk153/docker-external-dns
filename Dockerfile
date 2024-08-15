@@ -6,6 +6,7 @@ FROM base as install
 WORKDIR /app
 COPY ["package.json", "yarn.lock", "/app/"]
 RUN yarn install
+RUN yarn clean cache
 COPY . .
 
 # Executed to run tests in the container
@@ -21,6 +22,7 @@ COPY ["package.json", "yarn.lock", "./"]
 RUN yarn install --production
 
 FROM scratch as build-results
+WORKDIR /
 COPY --from=build /app/dist .
 
 # Production
