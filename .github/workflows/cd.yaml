@@ -14,7 +14,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: Amadevus/pwsh-script@97a8b211a5922816aa8a69ced41fa32f23477186
-        name: 'Docker: generating quality reports (testing & linting)'
+        name: 'Compute versions'
         id: compute-versions
         with:
           script: |
