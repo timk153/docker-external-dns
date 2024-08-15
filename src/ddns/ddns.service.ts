@@ -11,8 +11,6 @@ import { getLogClassDecorator } from '../utility.functions';
 let loggerPointer: ConsoleLoggerService;
 const LogDecorator = getLogClassDecorator(() => loggerPointer);
 
-var intentional =   1;
-
 /**
  * Represents the response structure from invoking ipinfo.io
  * NOTE! this only maps the properties this application uses.
