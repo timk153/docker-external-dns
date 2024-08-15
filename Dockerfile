@@ -11,9 +11,9 @@ COPY . .
 
 # Executed to run tests in the container
 FROM install as tests
-RUN apk update && apk add --no-cache docker-cli && apk add acl
+RUN apk update && apk add docker && apk add acl
 RUN yarn run test:ci
-RUN setfacl -R -m u:node:rwx reports && setfacl -R -m u:node:rwx /var/run
+RUN setfacl -R -m u:node:rwx reports && addgroup node docker
 USER node
 CMD yarn run test:e2e:ci
 
