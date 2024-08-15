@@ -25,7 +25,7 @@ jobs:
               # get all tags in semver order oldest to newest
               $tags = git tag -l --sort=version:refname  | Where-Object { $_ -Match '^\d\.\d\.\d$' }
               # get the latest released semver
-              $latestVersion = $tags[$tags.Count - 1]
+              $latestVersion = ($tags.Count -eq 1) ? $tags : $tags[$tags.Count - 1]
               # get the latest released semver for the tag being processed
               $majorVersionMatch =  $gitVersion | Select-String -Pattern '^\d+(?=\.)'
               $majorVersion = $majorVersionMatch.Matches[0].Value
