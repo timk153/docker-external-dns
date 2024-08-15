@@ -22,7 +22,7 @@ jobs:
             $identity = New-Guid
              $name = "docker-compose-external-dns.quality.$identity"
              docker build --target tests --tag $name .
-             docker run -v /var/run/docker.sock:/var/run/docker.sock --name $name -a stdin -a stdout -a stderr $name
+             docker run -u root -v /var/run/docker.sock:/var/run/docker.sock --name $name -a stdin -a stdout -a stderr $name
              mkdir output
              docker cp "$($name):/app/src" "./output/src"
              docker cp "$($name):/app/reports" "./output/reports"
