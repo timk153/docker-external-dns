@@ -1,20 +1,24 @@
+permissions: {}
 name: Publish to DockerHub
 on:
   push:
     tags:
       - '*'
   workflow_dispatch:
-permissions: {}
 jobs:
   deployment:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        name: Checkout
+        with:
+          fetch-depth: 0
       - uses: Amadevus/pwsh-script@97a8b211a5922816aa8a69ced41fa32f23477186
         name: 'Docker: generating quality reports (testing & linting)'
         id: compute-versions
         with:
           script: |
-            $gitVersion = git describe
+            $gitVersion = git describe --tags
             $latestMajorTag = ''
             $latestTag = ''
             if ($gitVersion -match '^\d.\d.\d$') {
@@ -37,7 +41,7 @@ jobs:
                 $latestTag = ', tkilminster/docker-external-dns:latest'
               }
             }
-            return "tkilminster/docker-external-dns:$($gitVersion)$($latestMajorTag)$(latestTag)"
+            return "tkilminster/docker-external-dns:$($gitVersion)$($latestMajorTag)$($latestTag)"
       - name: Set up QEMU
         uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf
       - name: Set up Docker Buildx
