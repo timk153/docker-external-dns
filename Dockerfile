@@ -12,6 +12,7 @@ COPY . .
 # Executed to run tests in the container
 FROM install as tests
 RUN yarn run test:ci
+USER node
 CMD yarn run test:e2e:ci
 
 # Build
@@ -32,3 +33,4 @@ WORKDIR /home/node/app
 ENV NODE_ENV=production
 EXPOSE 80
 ENTRYPOINT ["node", "main.js"]
+USER node
