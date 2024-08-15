@@ -14,8 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         name: Checkout
-      - uses: docker-practice/actions-setup-docker@fd7ecdac7caf8e2c541a48c9bcc280aae59a8461
-        timeout-minutes: 12
       - uses: Amadevus/pwsh-script@97a8b211a5922816aa8a69ced41fa32f23477186
         name: 'Docker: generating quality reports (testing & linting)'
         id: script
