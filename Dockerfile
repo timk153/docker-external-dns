@@ -6,7 +6,7 @@ FROM base as install
 WORKDIR /app
 COPY ["package.json", "yarn.lock", "/app/"]
 RUN yarn install && \
-  yarn clean cache
+  yarn cache clean
 COPY . .
 
 # Executed to run tests in the container
