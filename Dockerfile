@@ -13,8 +13,8 @@ COPY . .
 FROM install as tests
 RUN apk update && apk add --no-cache docker-cli && apk add acl
 RUN yarn run test:ci
-RUN setfacl -R -m u:node:rwx reports
-# USER node
+RUN setfacl -R -m u:node:rwx reports && addgroup node docker
+USER node
 CMD yarn run test:e2e:ci
 
 # Build
