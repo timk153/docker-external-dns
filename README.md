@@ -1,13 +1,14 @@
 ![project-url][test-badge]
 ![project-url][coverage-badge]
-![codefactor-url][codefactor-badge]
+![codacy-url][codacy-badge]
 
-[codefactor-badge]: https://www.codefactor.io/repository/github/timk153/docker-external-dns/badge
-[codefactor-url]: https://www.codefactor.io/repository/github/timk153/docker-external-dn
+[codacy-badge]: https://app.codacy.com/project/badge/Grade/d43ba19e75954648b5f79ce6db8e8cc3
+[codacy-url]: https://app.codacy.com/gh/timk153/docker-external-dns/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade
 
 [project-url]: https://github.com/timk153/docker-external-dns
 [test-badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Ftimk153%2F26bea053b867128f6f37f5aac0ddcf8b%2Fraw%2F32d61159849411189d88f349d141c28dac0cbbaf%2Fdocker-external-dns-junit-tests.json
 [coverage-badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Ftimk153%2F26bea053b867128f6f37f5aac0ddcf8b%2Fraw%2Fcaa38e5f9bd95657bd1f4f9ac76f5447b627600f%2Fdocker-external-dns-cobertura-coverage.json
+
 
 # Docker Compose external DNS (dc-external-dns)
 
