@@ -12,6 +12,7 @@ COPY . .
 # Executed to run tests in the container
 FROM install as tests
 RUN yarn run test:ci
+RUN apk update && apk add --no-cache docker-cli
 USER node
 CMD yarn run test:e2e:ci
 
