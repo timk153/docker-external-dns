@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         name: Checkout
-      - uses: Amadevus/pwsh-script@97a8b21
+      - uses: Amadevus/pwsh-script@97a8b211a5922816aa8a69ced41fa32f23477186
         name: 'Docker: generating quality reports (testing & linting)'
         id: script
         with:
@@ -28,7 +28,7 @@ jobs:
              docker cp "$($name):/app/reports" "./output/reports"
              docker container rm $name
              docker image rm $name
-      - uses: mikepenz/action-junit-report@db71d41
+      - uses: mikepenz/action-junit-report@db71d41eb79864e25ab0337e395c352e84523afe
         name: Publish Test Report
         if: success() || failure()
         with:
@@ -36,11 +36,11 @@ jobs:
           fail_on_failure: true
           include_passed: true
       - name: Run codacy-coverage-reporter
-        uses: codacy/codacy-coverage-reporter-action@89d6c85
+        uses: codacy/codacy-coverage-reporter-action@89d6c85cfafaec52c72b6c5e8b2878d33104c699
         with:
           project-token: ${{ secrets.CODACY_TOKEN }}
           coverage-reports: ./output/reports/*cobertura*.xml
-      - uses: gaelgirodon/ci-badges-action@e2b7770
+      - uses: gaelgirodon/ci-badges-action@e2b7770c45a7c4be54af8b4b046afdeb09898dc4
         name: Generate CI badges
         with:
           gist-id: 26bea053b867128f6f37f5aac0ddcf8b
