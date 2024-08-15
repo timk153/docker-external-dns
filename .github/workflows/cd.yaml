@@ -18,7 +18,7 @@ jobs:
         id: compute-versions
         with:
           script: |
-            $gitVersion = git describe
+            $gitVersion = git describe --tags
             $latestMajorTag = ''
             $latestTag = ''
             if ($gitVersion -match '^\d.\d.\d$') {
