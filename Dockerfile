@@ -5,8 +5,8 @@ FROM node:lts-alpine as base
 FROM base as install
 WORKDIR /app
 COPY ["package.json", "yarn.lock", "/app/"]
-RUN yarn install
-RUN yarn clean cache
+RUN yarn install && \
+  yarn clean cache
 COPY . .
 
 # Executed to run tests in the container
