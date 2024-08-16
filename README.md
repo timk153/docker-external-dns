@@ -10,7 +10,7 @@
 [coverage-badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Ftimk153%2F26bea053b867128f6f37f5aac0ddcf8b%2Fraw%2Fcaa38e5f9bd95657bd1f4f9ac76f5447b627600f%2Fdocker-external-dns-cobertura-coverage.json
 
 
-# Docker Compose external DNS (dc-external-dns)
+# Docker Compose external DNS (docker-external-dns)
 
 This project was inspired by:
 https://github.com/kubernetes-sigs/external-dns
@@ -220,12 +220,12 @@ There are four types of image tag associated with this project:
 
 |tag|example|description|
 |-|-|-|
-|latest| tkilminster/docker-external-dns:latest|the latest release of the most recent major version|
-|\<major version number\>-latest|tkilminster/docker-external-dns:1-latest|the latest release of that major version. In the example it's the latest release of version 1.|
-|semantic version number|tkilminster/docker-external-dns:1.4.2|a specific release. In the example it's release 1.4.2|
-|semantic version with additional identifier|tkilminster/docker-external-dns:1.4.2-alpha|a alpha, beta or development build. In the example it's an alpha release of version 1.4.2.|
+|latest| timk153/docker-external-dns:latest|the latest release of the most recent major version|
+|\<major version number\>-latest|timk153/docker-external-dns:1-latest|the latest release of that major version. In the example it's the latest release of version 1.|
+|semantic version number|timk153/docker-external-dns:1.4.2|a specific release. In the example it's release 1.4.2|
+|semantic version with additional identifier|timk153/docker-external-dns:1.4.2-alpha|a alpha, beta or development build. In the example it's an alpha release of version 1.4.2.|
 
-All available tags can be found in the [docker hub public registry](https://hub.docker.com/repository/docker/tkilminster/docker-external-dns/tags).
+All available tags can be found in the [docker hub public registry](https://hub.docker.com/repository/docker/timk153/docker-external-dns/tags).
 
 ## Examples
 
@@ -243,7 +243,7 @@ This example demonstrates the most basic setup of the Docker Compose External DN
 ```yaml
 services:
   docker-compose-external-dns:
-    image: 'tkilminster/docker-external-dns:latest'
+    image: 'timk153/docker-external-dns:latest'
     environment:
       - API_TOKEN=<your api token here>
     volumes:
@@ -266,7 +266,7 @@ This configuration demonstrates the preferred method of passing the API token se
 ```yaml
 services:
   docker-compose-external-dns:
-    image: 'tkilminster/docker-external-dns:latest'
+    image: 'timk153/docker-external-dns:latest'
     environment:
       - API_TOKEN_FILE=/run/secrets/CLOUDFLARE_API_TOKEN
     secrets:
@@ -297,7 +297,7 @@ This example shows how to customize the label, instance ID, execution frequency,
 ```yaml
 services:
   docker-compose-external-dns:
-    image: 'tkilminster/docker-external-dns:latest'
+    image: 'timk153/docker-external-dns:latest'
     environment:
       - PROJECT_LABEL=dns.com.example
       - INSTANCE_ID=project-subdomain
@@ -333,7 +333,7 @@ Please note, your API_TOKEN(\_FILE) will require permissions for both domains.
 ```yaml
 services:
   docker-compose-external-dns:
-    image: 'tkilminster/docker-external-dns:latest'
+    image: 'timk153/docker-external-dns:latest'
     environment:
       - API_TOKEN=<your api token here>
     volumes:
@@ -362,7 +362,7 @@ These configurations demonstrates how to manage DNS records for different domain
 ```yaml
 services:
   docker-compose-external-dns-1:
-    image: 'tkilminster/docker-external-dns:latest'
+    image: 'timk153/docker-external-dns:latest'
     environment:
       - API_TOKEN=<api token for my-domain.com here>
     volumes:
@@ -370,7 +370,7 @@ services:
       - '/var/run/docker.sock:/var/run/docker.sock:ro'
 
 docker-compose-external-dns-2:
-    image: 'tkilminster/docker-external-dns:latest'
+    image: 'timk153/docker-external-dns:latest'
     environment:
       - INSTANCE_ID=2
       - API_TOKEN=<api token for my-other-domain.org here>
@@ -395,7 +395,7 @@ Explanation: This setup uses two separate docker-compose-external-dns services t
 ```yaml
 services:
   docker-compose-external-dns-1:
-    image: 'tkilminster/docker-external-dns:latest'
+    image: 'timk153/docker-external-dns:latest'
     environment:
       - PROJECT_LABEL=dns.com.my-domain
       - API_TOKEN=<api token for my-domain.com here>
@@ -404,7 +404,7 @@ services:
       - '/var/run/docker.sock:/var/run/docker.sock:ro'
 
 docker-compose-external-dns-2:
-    image: 'tkilminster/docker-external-dns:latest'
+    image: 'timk153/docker-external-dns:latest'
     environment:
       - PROJECT_LABEL=dns.org.my-other-domain
       - API_TOKEN=<api token for my-other-domain.org here>
@@ -434,7 +434,7 @@ Please note, these labels may live on one or more services spead across one or m
 ```yaml
 services:
   docker-compose-external-dns:
-    image: 'tkilminster/docker-external-dns:latest'
+    image: 'timk153/docker-external-dns:latest'
     environment:
       - API_TOKEN=<your api token here>
     volumes:
@@ -457,7 +457,7 @@ Explanation: This example configures an A record for my-domain.com pointing to 8
 ```yaml
 services:
   docker-compose-external-dns:
-    image: 'tkilminster/docker-external-dns:latest'
+    image: 'timk153/docker-external-dns:latest'
     environment:
       - API_TOKEN=<your api token here>
     volumes:
@@ -482,7 +482,7 @@ Settings to control interval are explained in the [configuration section](#confi
 ```yaml
 services:
   docker-compose-external-dns:
-    image: 'tkilminster/docker-external-dns:latest'
+    image: 'timk153/docker-external-dns:latest'
     environment:
       - API_TOKEN=<your api token here>
     volumes:
@@ -507,7 +507,7 @@ Explanation: This setup includes a CNAME record that aliases sub.my-domain.com t
 ```yaml
 services:
   docker-compose-external-dns:
-    image: 'tkilminster/docker-external-dns:latest'
+    image: 'timk153/docker-external-dns:latest'
     environment:
       - API_TOKEN=<your api token here>
     volumes:
@@ -533,7 +533,7 @@ Explanation: This configuration includes an NS record specifying ns1.lan.my-doma
 ```yaml
 services:
   docker-compose-external-dns:
-    image: 'tkilminster/docker-external-dns:latest'
+    image: 'timk153/docker-external-dns:latest'
     environment:
       - API_TOKEN=<your api token here>
     volumes:
@@ -557,7 +557,7 @@ Explanation: This example sets up an MX record for my-domain.com that points to 
 ```yaml
 services:
   docker-compose-external-dns:
-    image: 'tkilminster/docker-external-dns:latest'
+    image: 'timk153/docker-external-dns:latest'
     environment:
       - API_TOKEN=<your api token here>
     volumes:
