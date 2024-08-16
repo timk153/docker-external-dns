@@ -10,7 +10,7 @@
 [coverage-badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Ftimk153%2F26bea053b867128f6f37f5aac0ddcf8b%2Fraw%2Fcaa38e5f9bd95657bd1f4f9ac76f5447b627600f%2Fdocker-external-dns-cobertura-coverage.json
 
 
-# Docker Compose external DNS (dc-external-dns)
+# Docker Compose external DNS (docker-external-dns)
 
 This project was inspired by:
 https://github.com/kubernetes-sigs/external-dns
