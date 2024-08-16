@@ -35,4 +35,3 @@ WORKDIR /home/node/app
 ENV NODE_ENV=production
 EXPOSE 80
 ENTRYPOINT ["node", "main.js"]
-USER node
