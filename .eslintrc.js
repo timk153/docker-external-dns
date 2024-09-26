@@ -18,7 +18,7 @@ module.exports = {
     node: true,
     jest: true,
   },
-  ignorePatterns: ['.eslintrc.js', 'dist'],
+  ignorePatterns: ['.eslintrc.js', 'dist', 'yarn.lock'],
   rules: {
     'import/prefer-default-export': 'off', // common pattern with nestjs
     '@typescript-eslint/interface-name-prefix': 'off',
