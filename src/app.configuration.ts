@@ -73,7 +73,7 @@ export const loadConfigurationApiTokenFile = () => {
     }
     // return contents, overwrite API_TOKEN value
     return {
-      API_TOKEN: fileContent,
+      API_TOKEN: fileContent.trim(),
     };
   } catch (error) {
     // if already caught, just re-throw
