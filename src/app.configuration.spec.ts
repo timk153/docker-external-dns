@@ -394,17 +394,30 @@ describe('App Configuration', () => {
       process.env.API_TOKEN_FILE = envApiTokenFile;
     });
 
-    it('should load API_TOKEN from API_TOKEN_FILE', async () => {
-      // act
-      const sut = await getSystemUnderTest();
+    each([
+      `${mockReadFileSyncValue}\n`,
+      `${mockReadFileSyncValue}\r`,
+      `${mockReadFileSyncValue}\r\n`,
+      mockReadFileSyncValue,
+    ]).it(
+      'should load API_TOKEN from API_TOKEN_FILE',
+      async (readFileSyncValue) => {
+        // arrange
+        mockReadFileSync.mockReturnValueOnce(readFileSyncValue);
 
-      // assert
-      expect(mockReadFileSync).toHaveBeenCalledTimes(1);
-      expect(mockReadFileSync).toHaveBeenCalledWith(envApiTokenFile, {
-        encoding: 'utf8',
-      });
-      expect(sut.get('API_TOKEN', { infer: true })).toBe(mockReadFileSyncValue);
-    });
+        // act
+        const sut = await getSystemUnderTest();
+
+        // assert
+        expect(mockReadFileSync).toHaveBeenCalledTimes(1);
+        expect(mockReadFileSync).toHaveBeenCalledWith(envApiTokenFile, {
+          encoding: 'utf8',
+        });
+        expect(sut.get('API_TOKEN', { infer: true })).toBe(
+          mockReadFileSyncValue,
+        );
+      },
+    );
 
     it("should error if API_TOKEN_FILE doesn't resolve to a file", async () => {
       // arrange
