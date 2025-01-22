@@ -39,7 +39,7 @@ jobs:
         uses: codacy/codacy-coverage-reporter-action@89d6c85cfafaec52c72b6c5e8b2878d33104c699
         with:
           api-token: ${{ secrets.CODACY_TOKEN }}
-          coverage-reports: './output/reports/*cobertura*.xml'
+          coverage-reports: 'output/reports/*cobertura*.xml'
       - uses: gaelgirodon/ci-badges-action@e2b7770c45a7c4be54af8b4b046afdeb09898dc4
         name: Generate CI badges
         with:
