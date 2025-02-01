@@ -1,4 +1,4 @@
-<meta name="google-site-verification" content="BxFtjK97fs8vIbZk_fUjQ96iyJRTzRkYnOcCMpUl2sk" />
+<meta name="google-site-verification" content="iMJdl9EswDQ5r_TZdWfA_KYwFQUciE-B_NmYOox68U4" />
 
 ![project-url][test-badge]
 ![project-url][coverage-badge]
@@ -6,16 +6,16 @@
 
 [codacy-badge]: https://app.codacy.com/project/badge/Grade/d43ba19e75954648b5f79ce6db8e8cc3
 [codacy-url]: https://app.codacy.com/gh/timk153/docker-external-dns/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade
-
 [project-url]: https://github.com/timk153/docker-external-dns
 [test-badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Ftimk153%2F26bea053b867128f6f37f5aac0ddcf8b%2Fraw%2F32d61159849411189d88f349d141c28dac0cbbaf%2Fdocker-external-dns-junit-tests.json
 [coverage-badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Ftimk153%2F26bea053b867128f6f37f5aac0ddcf8b%2Fraw%2Fcaa38e5f9bd95657bd1f4f9ac76f5447b627600f%2Fdocker-external-dns-cobertura-coverage.json
 
-
 # Docker Compose external DNS (docker-external-dns)
 
-This project was inspired by:
-https://github.com/kubernetes-sigs/external-dns
+Repository: https://github.com/timk153/docker-external-dns
+
+This project was inspired by: <br/>
+https://github.com/kubernetes-sigs/external-dns <br/>
 https://github.com/dntsk/extdns
 
 It is broadly similar to [extdns](https://github.com/dntsk/extdns) in functionality, but expands upon it.
@@ -208,12 +208,12 @@ The properties required for this entry are as follows:
 
 There are four types of image tag associated with this project:
 
-|tag|example|description|
-|-|-|-|
-|latest| timk153/docker-external-dns:latest|the latest release of the most recent major version|
-|\<major version number\>-latest|timk153/docker-external-dns:1-latest|the latest release of that major version. In the example it's the latest release of version 1.|
-|semantic version number|timk153/docker-external-dns:1.4.2|a specific release. In the example it's release 1.4.2|
-|semantic version with additional identifier|timk153/docker-external-dns:1.4.2-alpha|a alpha, beta or development build. In the example it's an alpha release of version 1.4.2.|
+| tag                                         | example                                 | description                                                                                    |
+| ------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| latest                                      | timk153/docker-external-dns:latest      | the latest release of the most recent major version                                            |
+| \<major version number\>-latest             | timk153/docker-external-dns:1-latest    | the latest release of that major version. In the example it's the latest release of version 1. |
+| semantic version number                     | timk153/docker-external-dns:1.4.2       | a specific release. In the example it's release 1.4.2                                          |
+| semantic version with additional identifier | timk153/docker-external-dns:1.4.2-alpha | a alpha, beta or development build. In the example it's an alpha release of version 1.4.2.     |
 
 All available tags can be found in the [docker hub public registry](https://hub.docker.com/repository/docker/timk153/docker-external-dns/tags).
 
