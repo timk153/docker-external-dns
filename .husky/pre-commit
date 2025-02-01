@@ -1,1 +1,3 @@
-yarn run typedoc
+yarn run typedoc --entryPointStrategy Expand src
+git add .
+git commit --no-verify -m "generated typedoc"
