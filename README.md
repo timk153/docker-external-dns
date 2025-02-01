@@ -1,5 +1,3 @@
-<meta name="google-site-verification" content="iMJdl9EswDQ5r_TZdWfA_KYwFQUciE-B_NmYOox68U4" />
-
 ![project-url][test-badge]
 ![project-url][coverage-badge]
 ![codacy-url][codacy-badge]
