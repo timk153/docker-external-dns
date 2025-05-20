@@ -115,4 +115,5 @@ export interface IConfiguration {
   PROJECT_LABEL: string;
   INSTANCE_ID: string;
   ENTRY_IDENTIFIER: string;
+  PRESERVE_STOPPED: boolean;
 }
