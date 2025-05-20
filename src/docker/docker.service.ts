@@ -76,6 +76,9 @@ export class DockerService {
     this.dockerLabel = this.configService.get('ENTRY_IDENTIFIER', {
       infer: true,
     }) as string;
+    this.preserveStopped = this.configService.get('PRESERVE_STOPPED', {
+      infer: true,
+    }) as boolean;
     this.state = States.Initialized;
   }
 
@@ -93,6 +96,7 @@ export class DockerService {
       );
     try {
       return await this.docker.listContainers({
+        all: this.preserveStopped,
         filters: JSON.stringify({ label: [this.dockerLabel] }),
       });
     } catch (error) {

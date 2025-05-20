@@ -219,7 +219,7 @@ describe('DockerService', () => {
         'should return docker containers and filter by label (PRESERVE_STOPPED: %p)',
         async (preserveStopped) => {
           // arrange
-          process.env.PRESERVE_STOPPED = preserveStopped.toString();
+          sut['preserveStopped'] = preserveStopped;
 
           // act
           const result = await sut.getContainers();
