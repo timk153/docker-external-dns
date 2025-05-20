@@ -41,6 +41,8 @@ export class DockerService {
 
   private dockerLabel: string;
 
+  private preserveStopped: boolean;
+
   private state = States.Unintialized;
 
   constructor(

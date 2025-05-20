@@ -69,13 +69,17 @@ describe('DockerService', () => {
   ] as unknown as Docker.ContainerInfo[];
   const mockConfigServiceGetValue = {
     ENTRY_IDENTIFIER: 'project-label:instance-id',
+    PRESERVE_STOPPED: false,
   };
   let expectedDockerLabel = '';
+  let expectedPreserveStopped = false;
 
   beforeAll(() => {
-    const { ENTRY_IDENTIFIER } = mockConfigServiceGetValue;
+    const { ENTRY_IDENTIFIER, PRESERVE_STOPPED } = mockConfigServiceGetValue;
     process.env.ENTRY_IDENTIFIER = ENTRY_IDENTIFIER;
+    process.env.PRESERVE_STOPPED = PRESERVE_STOPPED.toString();
     expectedDockerLabel = ENTRY_IDENTIFIER;
+    expectedPreserveStopped = PRESERVE_STOPPED;
   });
 
   afterAll(() => {
@@ -131,11 +135,15 @@ describe('DockerService', () => {
       // assert
       expect(mockDockerFactory.get).toHaveBeenCalledTimes(1);
       expect(sut['docker']).toBe(mockDockerFactoryGetValue);
-      expect(mockConfigService.get).toHaveBeenCalledTimes(1);
+      expect(mockConfigService.get).toHaveBeenCalledTimes(2);
       expect(mockConfigService.get).toHaveBeenCalledWith('ENTRY_IDENTIFIER', {
         infer: true,
       });
+      expect(mockConfigService.get).toHaveBeenCalledWith('PRESERVE_STOPPED', {
+        infer: true,
+      });
       expect(sut['dockerLabel']).toEqual(expectedDockerLabel);
+      expect(sut['preserveStopped']).toEqual(expectedPreserveStopped);
       expect(sut['state']).toBe(States.Initialized);
       expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
       expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
@@ -203,31 +211,41 @@ describe('DockerService', () => {
       sut['state'] = States.Initialized;
       sut['docker'] = mockDockerFactoryGetValue;
       sut['dockerLabel'] = expectedDockerLabel;
+      sut['preserveStopped'] = expectedPreserveStopped;
     });
 
     describe('getContainers', () => {
-      it('should return docker containers and filter by label', async () => {
-        // act
-        const result = await sut.getContainers();
+      each([true, false]).it(
+        'should return docker containers and filter by label (PRESERVE_STOPPED: %p)',
+        async (preserveStopped) => {
+          // arrange
+          process.env.PRESERVE_STOPPED = preserveStopped.toString();
 
-        // assert
-        expect(result).toBe(mockDockerListContainersValue);
-        expect(mockDockerFactoryGetValue.listContainers).toHaveBeenCalledTimes(
-          1,
-        );
-        expect(mockDockerFactoryGetValue.listContainers).toHaveBeenCalledWith({
-          filters: JSON.stringify({ label: [expectedDockerLabel] }),
-        });
-        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
-        expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
-          expect.objectContaining({
-            level: 'trace',
-            method: 'getContainers',
-            service: 'DockerService',
-            params: '[]',
-          }),
-        );
-      });
+          // act
+          const result = await sut.getContainers();
+
+          // assert
+          expect(result).toBe(mockDockerListContainersValue);
+          expect(
+            mockDockerFactoryGetValue.listContainers,
+          ).toHaveBeenCalledTimes(1);
+          expect(mockDockerFactoryGetValue.listContainers).toHaveBeenCalledWith(
+            {
+              all: preserveStopped,
+              filters: JSON.stringify({ label: [expectedDockerLabel] }),
+            },
+          );
+          expect(mockConsoleLoggerService.verbose).toHaveBeenCalledTimes(1);
+          expect(mockConsoleLoggerService.verbose).toHaveBeenCalledWith(
+            expect.objectContaining({
+              level: 'trace',
+              method: 'getContainers',
+              service: 'DockerService',
+              params: '[]',
+            }),
+          );
+        },
+      );
 
       it('should error if getContainers errors', async () => {
         // arrange

@@ -236,22 +236,57 @@ describe('DockerService (Integration)', () => {
 
   let fetchedContainers: Dockerode.ContainerInfo[];
 
-  it('should list containers with matching labels', async () => {
-    // act
-    fetchedContainers = await sut.getContainers();
+  describe('fetch containers tests', () => {
+    beforeAll(async () => {
+      await containerInstances.Invalid.stop();
+      await containerInstances.MX.stop();
+    });
 
-    // assert
-    expect(fetchedContainers).toHaveLength(10);
-    expect(fetchedContainers[0].Names[0]).toContain('Empty');
-    expect(fetchedContainers[1].Names[0]).toContain('DNSInvalid');
-    expect(fetchedContainers[2].Names[0]).toContain('DNSDuplicate2');
-    expect(fetchedContainers[3].Names[0]).toContain('DNSNS');
-    expect(fetchedContainers[4].Names[0]).toContain('DNSMX');
-    expect(fetchedContainers[5].Names[0]).toContain('DNSMultiLabel');
-    expect(fetchedContainers[6].Names[0]).toContain('DNSDuplicate1');
-    expect(fetchedContainers[7].Names[0]).toContain('DNSCNAME');
-    expect(fetchedContainers[8].Names[0]).toContain('DNSAMultiLabel');
-    expect(fetchedContainers[9].Names[0]).toContain('DNSA');
+    afterAll(async () => {
+      await containerInstances.Invalid.restart();
+      await containerInstances.MX.restart();
+    });
+
+    it('should list containers with matching labels excluding stopped', async () => {
+      // arrange
+      process.env.PRESERVE_STOPPED = 'false';
+      await containerInstances.Invalid.stop();
+
+      // act
+      fetchedContainers = await sut.getContainers();
+
+      // assert
+      expect(fetchedContainers).toHaveLength(8);
+      expect(fetchedContainers[0].Names[0]).toContain('Empty');
+      expect(fetchedContainers[1].Names[0]).toContain('DNSDuplicate2');
+      expect(fetchedContainers[2].Names[0]).toContain('DNSNS');
+      expect(fetchedContainers[3].Names[0]).toContain('DNSMultiLabel');
+      expect(fetchedContainers[4].Names[0]).toContain('DNSDuplicate1');
+      expect(fetchedContainers[5].Names[0]).toContain('DNSCNAME');
+      expect(fetchedContainers[6].Names[0]).toContain('DNSAMultiLabel');
+      expect(fetchedContainers[7].Names[0]).toContain('DNSA');
+    });
+
+    it('should list containers with matching labels including stopped', async () => {
+      // arrange
+      process.env.PRESERVE_STOPPED = 'true';
+
+      // act
+      fetchedContainers = await sut.getContainers();
+
+      // assert
+      expect(fetchedContainers).toHaveLength(10);
+      expect(fetchedContainers[0].Names[0]).toContain('Empty');
+      expect(fetchedContainers[1].Names[0]).toContain('DNSInvalid');
+      expect(fetchedContainers[2].Names[0]).toContain('DNSDuplicate2');
+      expect(fetchedContainers[3].Names[0]).toContain('DNSNS');
+      expect(fetchedContainers[4].Names[0]).toContain('DNSMX');
+      expect(fetchedContainers[5].Names[0]).toContain('DNSMultiLabel');
+      expect(fetchedContainers[6].Names[0]).toContain('DNSDuplicate1');
+      expect(fetchedContainers[7].Names[0]).toContain('DNSCNAME');
+      expect(fetchedContainers[8].Names[0]).toContain('DNSAMultiLabel');
+      expect(fetchedContainers[9].Names[0]).toContain('DNSA');
+    });
   });
 
   it('should parse the listed containers, skipping the invalid and empty ones', async () => {
