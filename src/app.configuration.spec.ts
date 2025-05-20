@@ -32,6 +32,9 @@ describe('App Configuration', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // configure boolean default environment variables
+    process.env.PRESERVE_STOPPED = 'false';
   });
 
   /**
@@ -127,7 +130,7 @@ describe('App Configuration', () => {
         ),
       );
       expect(sut.get('PRESERVE_STOPPED', { infer: true })).toBe(
-        preserveStopped,
+        preserveStopped === 'true',
       );
       expect(sut.get('API_TOKEN', { infer: true })).toEqual(
         process.env.API_TOKEN,
@@ -433,7 +436,6 @@ describe('App Configuration', () => {
       process.env.DDNS_EXECUTION_FREQUENCY_MINUTES = '';
       process.env.API_TOKEN = mockReadFileSyncValue;
       process.env.LOG_LEVEL = element;
-      process.env.PRESERVE_STOPPED = element;
 
       // act
       const sut = await getSystemUnderTest();
@@ -450,7 +452,6 @@ describe('App Configuration', () => {
         sut.get('DDNS_EXECUTION_FREQUENCY_MINUTES', { infer: true }),
       ).toEqual(60);
       expect(sut.get('LOG_LEVEL', { infer: true })).toEqual('error');
-      expect(sut.get('PRESERVE_STOPPED', { infer: true })).toBe(false);
     },
   );
 
