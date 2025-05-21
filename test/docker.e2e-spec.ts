@@ -19,6 +19,7 @@ import { validDnsCnameEntry } from '../src/dto/dnscname-entry.spec';
 import { validDnsMxEntry } from '../src/dto/dnsmx-entry.spec';
 import { DockerService } from '../src/docker/docker.service';
 import { validDnsNsEntry } from '../src/dto/dnsns-entry.spec';
+import { getConfigModuleImport } from '../src/app.configuration';
 
 describe('DockerService (Integration)', () => {
   const backupEnvironment = { ...process.env };
@@ -224,9 +225,9 @@ describe('DockerService (Integration)', () => {
     process.env = backupEnvironment;
   }, 3000000);
 
-  beforeEach(async () => {
+  async function initialize() {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [getConfigModuleImport(), AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -234,7 +235,7 @@ describe('DockerService (Integration)', () => {
 
     sut = app.get(DockerService);
     sut.initialize();
-  });
+  }
 
   let fetchedContainers: Dockerode.ContainerInfo[];
 
@@ -246,7 +247,8 @@ describe('DockerService (Integration)', () => {
 
     it('should list containers with matching labels excluding stopped', async () => {
       // arrange
-      sut['preserveStopped'] = false;
+      process.env.PRESERVE_STOPPED = 'false';
+      await initialize();
 
       // act
       fetchedContainers = await sut.getContainers();
@@ -265,7 +267,8 @@ describe('DockerService (Integration)', () => {
 
     it('should list containers with matching labels including stopped', async () => {
       // arrange
-      sut['preserveStopped'] = true;
+      process.env.PRESERVE_STOPPED = 'true';
+      await initialize();
 
       // act
       fetchedContainers = await sut.getContainers();
@@ -286,6 +289,10 @@ describe('DockerService (Integration)', () => {
   });
 
   it('should parse the listed containers, skipping the invalid and empty ones', async () => {
+    // arrange
+    process.env.PRESERVE_STOPPED = 'false';
+    await initialize();
+
     // act
     const parsedContainers = sut.extractDNSEntries(fetchedContainers);
 
