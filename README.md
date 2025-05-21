@@ -6,11 +6,9 @@
 
 [codacy-badge]: https://app.codacy.com/project/badge/Grade/d43ba19e75954648b5f79ce6db8e8cc3
 [codacy-url]: https://app.codacy.com/gh/timk153/docker-external-dns/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade
-
 [project-url]: https://github.com/timk153/docker-external-dns
 [test-badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Ftimk153%2F26bea053b867128f6f37f5aac0ddcf8b%2Fraw%2F32d61159849411189d88f349d141c28dac0cbbaf%2Fdocker-external-dns-junit-tests.json
 [coverage-badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Ftimk153%2F26bea053b867128f6f37f5aac0ddcf8b%2Fraw%2Fcaa38e5f9bd95657bd1f4f9ac76f5447b627600f%2Fdocker-external-dns-cobertura-coverage.json
-
 
 # Docker Compose external DNS (docker-external-dns)
 
@@ -27,6 +25,7 @@ This project does the following:
 
 - Reads labels from containers sharing the same docker runtime.<br/>
   The labels contain DNS information.
+- Optionally include stopped containers DNS entires
 - Synchronises those records to CloudFlare
 - Runs at a regular interval (like a CRON job but interval is only programmable in seconds)
 - Supports DDNS (ipv4 only)
@@ -79,6 +78,7 @@ Detailed examples are available in the [Examples](#examples) section.
 | INSTANCE_ID                      | 1                           | Detailed example available in the [project Label and Instance ID section](#project_label-and-instance_id) section.<br/><br/>Forms part of the label the project looks for on Docker containers to interpret as DNS entries. Also written as a comment to Cloudflare DNS entries managed by this instance of the project.                                                                                                                                    |
 | EXECUTION_FREQUENCY_SECONDS      | 60                          | How frequently the CRON job should execute to detect changes. Default is every 60 seconds. Undefined or empty uses the default. Minimum is every 1 second. There is no maximum. This must be an integer.                                                                                                                                                                                                                                                    |
 | DDNS_EXECUTION_FREQUENCY_MINUTES | 60                          | Determines how frequently the DDNS Service checks for a new public IP address. This setting only applies if you're using DDNS otherwise the service will not be started.                                                                                                                                                                                                                                                                                    |
+| PRESERVE_STOPPED                 | false                       | Determines if DNS entries for stopped containers are synchronised to the DNS server. `false` doesn't synchronise, meaning containers which are stopped will have their DNS entries removed. `true` means stopped containers won't have their entries removed. Removed containers will always have their DNS entries removed.                                                                                                                                |
 | API_TOKEN                        |                             | You must supply either API_TOKEN or API_TOKEN_FILE but not both.<br/><br/>Your API token from Cloudflare. Must be granted Zone.Zone read and Zone.DNS edit.<br/><br/><span style="color: red; font-weight:bold">IMPORTANT</span> Use of this property is insecure as your API_TOKEN will be in plain text. It is recommended you use API_TOKEN_FILE. Use at your own risk.                                                                                  |
 | API_TOKEN_FILE                   |                             | You must supply either API_TOKEN or API_TOKEN_FILE but not both.<br/><br/>Secure way to share your Cloudflare API Token with the project. Recommended approach for Docker Swarm. Compatible with Docker Compose (but less secure).<br/><br/>Read Docker Compose docs for more information: [Docker Compose Secrets](https://docs.docker.com/compose/use-secrets/)                                                                                           |
 | LOG_LEVEL                        | error                       | The current logging level. The default is error, meaning only errors and fatal get logged.<br/><br/>Each level includes the levels above it from most specific to least specific. By way of example, verbose will output everything. debug will ignore verbose. log will ignore debug and verbose.<br/><br/>From most specific to least:</br>fatal<br/>error<br/>warn<br/>log<br/>debug<br/>verbose<br/><br/>These log levels come from the NestJS project. |
@@ -208,12 +208,12 @@ The properties required for this entry are as follows:
 
 There are four types of image tag associated with this project:
 
-|tag|example|description|
-|-|-|-|
-|latest| timk153/docker-external-dns:latest|the latest release of the most recent major version|
-|\<major version number\>-latest|timk153/docker-external-dns:1-latest|the latest release of that major version. In the example it's the latest release of version 1.|
-|semantic version number|timk153/docker-external-dns:1.4.2|a specific release. In the example it's release 1.4.2|
-|semantic version with additional identifier|timk153/docker-external-dns:1.4.2-alpha|a alpha, beta or development build. In the example it's an alpha release of version 1.4.2.|
+| tag                                         | example                                 | description                                                                                    |
+| ------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| latest                                      | timk153/docker-external-dns:latest      | the latest release of the most recent major version                                            |
+| \<major version number\>-latest             | timk153/docker-external-dns:1-latest    | the latest release of that major version. In the example it's the latest release of version 1. |
+| semantic version number                     | timk153/docker-external-dns:1.4.2       | a specific release. In the example it's release 1.4.2                                          |
+| semantic version with additional identifier | timk153/docker-external-dns:1.4.2-alpha | a alpha, beta or development build. In the example it's an alpha release of version 1.4.2.     |
 
 All available tags can be found in the [docker hub public registry](https://hub.docker.com/repository/docker/timk153/docker-external-dns/tags).
 
@@ -277,6 +277,30 @@ secrets:
 ```
 
 Explanation: This setup uses Docker secrets to securely manage the Cloudflare API token. The API_TOKEN_FILE environment variable points to the secret file, which contains the API token. This approach is recommended for better security, especially in production environments.
+
+### PRESERVE_STOPPED
+
+This example demonstrates a configuration which preserves the DNS records for containers which become stopped.
+
+```yaml
+services:
+  docker-compose-external-dns:
+    image: 'timk153/docker-external-dns:latest'
+    environment:
+      - API_TOKEN=<your api token here>
+      - PRESERVE_STOPPED=true
+    volumes:
+      # Used to read labels from containers - readonly
+      - '/var/run/docker.sock:/var/run/docker.sock:ro'
+
+  other-service:
+    image: 'busybox:latest'
+    command: 'sleep 3600'
+    labels:
+      - 'docker-compose-external-dns:1=[{ "type": "A", "name": "my-domain.com", "address": "8.8.8.8", "proxy": false }]'
+```
+
+Explanation: This setup sets PRESERVE_STOPPED to true, meaning if other-service became stopped, the DNS entry would be preserved
 
 ### Bespoke label, instance id, frequency and log level
 
