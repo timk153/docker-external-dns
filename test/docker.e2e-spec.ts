@@ -1,3 +1,5 @@
+// allow dot notation to override private scoped variables for test cases
+/* eslint-disable @typescript-eslint/dot-notation */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import {
@@ -238,19 +240,13 @@ describe('DockerService (Integration)', () => {
 
   describe('fetch containers tests', () => {
     beforeAll(async () => {
-      await containerInstances.Invalid.stop();
-      await containerInstances.MX.stop();
-    });
-
-    afterAll(async () => {
-      await containerInstances.Invalid.restart();
-      await containerInstances.MX.restart();
+      await containerInstances.Invalid.stop({ remove: false });
+      await containerInstances.MX.stop({ remove: false });
     });
 
     it('should list containers with matching labels excluding stopped', async () => {
       // arrange
-      process.env.PRESERVE_STOPPED = 'false';
-      await containerInstances.Invalid.stop();
+      sut['preserveStopped'] = false;
 
       // act
       fetchedContainers = await sut.getContainers();
@@ -269,7 +265,7 @@ describe('DockerService (Integration)', () => {
 
     it('should list containers with matching labels including stopped', async () => {
       // arrange
-      process.env.PRESERVE_STOPPED = 'true';
+      sut['preserveStopped'] = true;
 
       // act
       fetchedContainers = await sut.getContainers();
