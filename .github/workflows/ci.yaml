@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - main
 permissions:
   checks: write
   pull-requests: write
@@ -42,6 +45,7 @@ jobs:
           coverage-reports: 'output/reports/*cobertura*.xml'
       - uses: gaelgirodon/ci-badges-action@e2b7770c45a7c4be54af8b4b046afdeb09898dc4
         name: Generate CI badges
+        if: github.ref == 'refs/heads/main'
         with:
           gist-id: 26bea053b867128f6f37f5aac0ddcf8b
           token: ${{ secrets.GIST_TOKEN }}
