@@ -57,7 +57,7 @@ export class DdnsService extends CronService {
    * Fetches the execution frequency for the Ddns service from the configuration
    */
   get ExecutionFrequencySeconds(): number {
-    const executionIntervalMinutes: number | undefined = this.configService.get(
+    const executionIntervalMinutes: number | undefined = this.configService.get<number>(
       'DDNS_EXECUTION_FREQUENCY_MINUTES',
       { infer: true },
     );

@@ -64,7 +64,7 @@ export class CloudFlareService {
       );
 
     this.cloudFlare = new Cloudflare({
-      apiToken: this.configService.get('API_TOKEN', { infer: true }),
+      apiToken: this.configService.get<string>('API_TOKEN', { infer: true }),
     });
 
     this.state = State.Initialized;
@@ -158,7 +158,7 @@ export class CloudFlareService {
       let paginatedResult = await this.cloudFlare.dns.records.list({
         zone_id: zoneId,
         comment: {
-          exact: this.configService.get('ENTRY_IDENTIFIER', { infer: true }),
+          exact: this.configService.get<string>('ENTRY_IDENTIFIER', { infer: true }),
         },
       });
       result = [...result, ...paginatedResult.getPaginatedItems()];

@@ -49,7 +49,7 @@ export class AppService extends CronService {
    * Fetches the EXECUTION_FREQUENCY_SECONDS
    */
   get ExecutionFrequencySeconds(): number {
-    const executionIntervalSeconds: number | undefined = this.configService.get(
+    const executionIntervalSeconds: number | undefined = this.configService.get<number>(
       'EXECUTION_FREQUENCY_SECONDS',
       { infer: true },
     );
