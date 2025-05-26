@@ -158,7 +158,9 @@ export class CloudFlareService {
       let paginatedResult = await this.cloudFlare.dns.records.list({
         zone_id: zoneId,
         comment: {
-          exact: this.configService.get<string>('ENTRY_IDENTIFIER', { infer: true }),
+          exact: this.configService.get<string>('ENTRY_IDENTIFIER', {
+            infer: true,
+          }),
         },
       });
       result = [...result, ...paginatedResult.getPaginatedItems()];

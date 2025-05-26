@@ -45,7 +45,9 @@ export class CloudFlareFactory {
       name,
       content: address,
       proxied: proxy,
-      comment: this.configService.get<string>('ENTRY_IDENTIFIER', { infer: true }),
+      comment: this.configService.get<string>('ENTRY_IDENTIFIER', {
+        infer: true,
+      }),
     };
   }
 
@@ -66,7 +68,9 @@ export class CloudFlareFactory {
       name,
       content: target,
       proxied: proxy,
-      comment: this.configService.get<string>('ENTRY_IDENTIFIER', { infer: true }),
+      comment: this.configService.get<string>('ENTRY_IDENTIFIER', {
+        infer: true,
+      }),
     };
   }
 
@@ -87,7 +91,9 @@ export class CloudFlareFactory {
       name,
       content: server,
       priority,
-      comment: this.configService.get<string>('ENTRY_IDENTIFIER', { infer: true }),
+      comment: this.configService.get<string>('ENTRY_IDENTIFIER', {
+        infer: true,
+      }),
     };
   }
 
@@ -107,7 +113,9 @@ export class CloudFlareFactory {
       type: 'NS',
       name,
       content: server,
-      comment: this.configService.get<string>('ENTRY_IDENTIFIER', { infer: true }),
+      comment: this.configService.get<string>('ENTRY_IDENTIFIER', {
+        infer: true,
+      }),
     };
   }
 }

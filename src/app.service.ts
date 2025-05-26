@@ -49,10 +49,10 @@ export class AppService extends CronService {
    * Fetches the EXECUTION_FREQUENCY_SECONDS
    */
   get ExecutionFrequencySeconds(): number {
-    const executionIntervalSeconds: number | undefined = this.configService.get<number>(
-      'EXECUTION_FREQUENCY_SECONDS',
-      { infer: true },
-    );
+    const executionIntervalSeconds: number | undefined =
+      this.configService.get<number>('EXECUTION_FREQUENCY_SECONDS', {
+        infer: true,
+      });
     if (!isNumber(executionIntervalSeconds))
       throw new Error(
         `AppService, ExecutionIntervalSeconds: Unreachable error, EXECUTION_FREQUENCY_SECONDS isn't a number (${executionIntervalSeconds})`,

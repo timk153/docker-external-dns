@@ -57,10 +57,10 @@ export class DdnsService extends CronService {
    * Fetches the execution frequency for the Ddns service from the configuration
    */
   get ExecutionFrequencySeconds(): number {
-    const executionIntervalMinutes: number | undefined = this.configService.get<number>(
-      'DDNS_EXECUTION_FREQUENCY_MINUTES',
-      { infer: true },
-    );
+    const executionIntervalMinutes: number | undefined =
+      this.configService.get<number>('DDNS_EXECUTION_FREQUENCY_MINUTES', {
+        infer: true,
+      });
     if (!isNumber(executionIntervalMinutes))
       throw new Error(
         `AppService, ExecutionIntervalSeconds: Unreachable error, DDNS_EXECUTION_FREQUENCY_MINUTES isn't a number (${executionIntervalMinutes})`,
