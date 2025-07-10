@@ -11,7 +11,7 @@ jest.mock('fs');
 const mockReadFileSync = readFileSync as jest.MockedFunction<
   typeof readFileSync
 >;
-const mockReadFileSyncValue = 'valid_api_token_response';
+const mockReadFileSyncValue = 'valid_api-token_response';
 
 describe('App Configuration', () => {
   const apiTokenInvalidTestCases = [

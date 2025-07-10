@@ -27,7 +27,7 @@ export const validationSchema = Joi.object({
     .default(60),
   PRESERVE_STOPPED: Joi.boolean().default(false),
   API_TOKEN: Joi.string()
-    .pattern(/^[A-Za-z0-9_\-]+$/)
+    .pattern(/^[A-Za-z0-9_-]+$/)
     .min(10)
     .max(128)
     .trim()
@@ -60,7 +60,7 @@ export const loadConfigurationApiTokenFile = () => {
     });
     // validate the contents
     const { error } = Joi.string()
-      .pattern(/^[A-Za-z0-9_\-]+$/)
+      .pattern(/^[A-Za-z0-9_-]+$/)
       .min(10)
       .max(128)
       .trim()
