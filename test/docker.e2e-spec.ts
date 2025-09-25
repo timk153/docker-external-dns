@@ -227,7 +227,12 @@ describe('DockerService (Integration)', () => {
 
   async function initialize() {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [getConfigModuleImport(), AppModule],
+      imports: [
+        {
+          module: AppModule,
+          imports: [getConfigModuleImport()],
+        },
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();

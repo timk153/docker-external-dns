@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AppService } from './app.service';
+import { getConfigModuleImport } from './app.configuration';
 import { ConsoleLoggerService } from './logger.service';
 
 /**
@@ -10,9 +11,12 @@ import { ConsoleLoggerService } from './logger.service';
  * Starts the CRON job to synchronise the DNS entries.
  */
 async function bootstrap() {
-  const app = await NestFactory.createApplicationContext(AppModule, {
-    bufferLogs: true,
-  });
+  const app = await NestFactory.createApplicationContext(
+    { module: AppModule, imports: [getConfigModuleImport()] },
+    {
+      bufferLogs: true,
+    },
+  );
   app.useLogger(await app.resolve(ConsoleLoggerService));
   app.enableShutdownHooks();
   const appService = app.get(AppService);

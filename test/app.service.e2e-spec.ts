@@ -27,6 +27,7 @@ import { validDnsMxEntry } from '../src/dto/dnsmx-entry.spec';
 import { validDnsNsEntry } from '../src/dto/dnsns-entry.spec';
 import { AppModule } from '../src/app.module';
 import { AppService } from '../src/app.service';
+import { getConfigModuleImport } from '../src/app.configuration';
 
 // mock cloudflare as integration doesn't want to invoke the real third party dependencies.
 // instead, responses and calls to cloudflare will be mocked.
@@ -132,7 +133,12 @@ describe('AppService (Integration)', () => {
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [
+        {
+          module: AppModule,
+          imports: [getConfigModuleImport()],
+        },
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();

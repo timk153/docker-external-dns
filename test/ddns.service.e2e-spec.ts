@@ -3,6 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from '../src/app.module';
 import { DdnsService, IPInfoIOResponse } from '../src/ddns/ddns.service';
+import { getConfigModuleImport } from '../src/app.configuration';
 
 describe('DDNSService (Integration)', () => {
   let app: INestApplication;
@@ -17,7 +18,12 @@ describe('DDNSService (Integration)', () => {
     jest.clearAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [
+        {
+          module: AppModule,
+          imports: [getConfigModuleImport()],
+        },
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
