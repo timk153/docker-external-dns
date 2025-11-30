@@ -119,3 +119,6 @@ dist
 # docker compose
 docker-compose*.yml
 docker-compose*.yaml
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md
