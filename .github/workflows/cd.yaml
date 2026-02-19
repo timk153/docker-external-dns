@@ -3,7 +3,7 @@ name: Publish to DockerHub
 on:
   push:
     tags:
-      - '*'
+      - "*"
   workflow_dispatch:
 jobs:
   deployment:
@@ -14,16 +14,16 @@ jobs:
         with:
           fetch-depth: 0
       - uses: Amadevus/pwsh-script@97a8b211a5922816aa8a69ced41fa32f23477186
-        name: 'Compute versions'
+        name: "Compute versions"
         id: compute-versions
         with:
           script: |
             $gitVersion = git describe --tags
             $latestMajorTag = ''
             $latestTag = ''
-            if ($gitVersion -match '^\d.\d.\d$') {
+            if ($gitVersion -match '^\d+.\d+.\d+$') {
               # get all tags in semver order oldest to newest
-              $tags = git tag -l --sort=version:refname  | Where-Object { $_ -Match '^\d\.\d\.\d$' }
+              $tags = git tag -l --sort=version:refname  | Where-Object { $_ -Match '^\d+\.\d+\.\d+$' }
               # get the latest released semver
               $latestVersion = ($tags.Count -eq 1) ? $tags : $tags[$tags.Count - 1]
               # get the latest released semver for the tag being processed
