@@ -106,6 +106,10 @@ The values of the Docker Compose labels correspond to DNS entries. You can find 
 Examples for all of these can be found in the [Examples](#examples) section below.
 For more details on the DNS record types, refer to the [DNS Entry Types](#dns-entry-types) section.
 
+#### Wildcards
+
+Wildcard record names (a name whose leftmost label is `*`, e.g. `*.example.com`) are supported for `A`, `CNAME` and `MX` records. Per [RFC 4592 §4.2](https://www.rfc-editor.org/rfc/rfc4592#section-4.2), a wildcard `NS` record is discouraged and does not create a delegation, so wildcard names are rejected for `NS` records.
+
 #### A
 
 The A record points a domain name to an IP address.  

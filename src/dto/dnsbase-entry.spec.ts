@@ -45,7 +45,13 @@ describe('DnsbaseEntry', () => {
     });
 
     describe('name', () => {
-      each(['test.work', 'www.test.work', 'ns1.test.work', 'mx.test.work']).it(
+      each([
+        'test.work',
+        'www.test.work',
+        'ns1.test.work',
+        'mx.test.work',
+        '*.test.work',
+      ]).it(
         'should be a valid domain name (%p)',
         async (domainName) => {
           // arrange

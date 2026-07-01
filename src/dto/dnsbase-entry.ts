@@ -78,7 +78,7 @@ export abstract class DnsbaseEntry {
    * For an a:
    * mydomain.com
    */
-  @IsFQDN()
+  @IsFQDN({ allow_wildcard: true })
   name: string;
 
   /**

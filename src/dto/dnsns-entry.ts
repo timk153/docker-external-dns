@@ -1,4 +1,4 @@
-import { IsFQDN } from 'class-validator';
+import { IsFQDN, Matches } from 'class-validator';
 import { DnsbaseEntry, DNSTypes, IHasDnsType } from './dnsbase-entry';
 
 /**
@@ -12,6 +12,14 @@ export class DnsNsEntry extends DnsbaseEntry {
    */
   @IsFQDN()
   server: string;
+
+  /**
+   * The record name. Inherits the base FQDN rule but additionally rejects
+   * wildcards: per RFC 4592 §4.2 a wildcard NS RRset is discouraged and does
+   * not create a delegation, so wildcards are only allowed for A/CNAME/MX.
+   */
+  @Matches(/^[^*]/, { message: 'name must not be a wildcard for NS records' })
+  name: string;
 
   /**
    * Determines if another DnsNsEntry has the same values as this one.
