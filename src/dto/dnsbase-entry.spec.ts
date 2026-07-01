@@ -51,9 +51,7 @@ describe('DnsbaseEntry', () => {
         'ns1.test.work',
         'mx.test.work',
         '*.test.work',
-      ]).it(
-        'should be a valid domain name (%p)',
-        async (domainName) => {
+      ]).it('should be a valid domain name (%p)', async (domainName) => {
           // arrange
           sut.name = domainName;
 
