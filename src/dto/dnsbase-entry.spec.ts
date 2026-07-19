@@ -52,13 +52,12 @@ describe('DnsbaseEntry', () => {
         'mx.test.work',
         '*.test.work',
       ]).it('should be a valid domain name (%p)', async (domainName) => {
-          // arrange
-          sut.name = domainName;
+        // arrange
+        sut.name = domainName;
 
-          // act / assert
-          expect(validate(sut)).resolves.toHaveLength(0);
-        },
-      );
+        // act / assert
+        expect(validate(sut)).resolves.toHaveLength(0);
+      });
 
       each(['a', 'em', '', '   ', '123', 'test@thing.com']).it(
         'should not be an invalid string (%p)',

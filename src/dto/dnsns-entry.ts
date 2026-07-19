@@ -1,4 +1,4 @@
-import { IsFQDN, Matches } from 'class-validator';
+import { IsFQDN } from 'class-validator';
 import { DnsbaseEntry, DNSTypes, IHasDnsType } from './dnsbase-entry';
 
 /**
