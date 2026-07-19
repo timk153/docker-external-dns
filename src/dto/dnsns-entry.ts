@@ -14,11 +14,11 @@ export class DnsNsEntry extends DnsbaseEntry {
   server: string;
 
   /**
-   * The record name. Inherits the base FQDN rule but additionally rejects
+   * Overrides the abstract base defined name record to redefine the validation rules for NS records.
    * wildcards: per RFC 4592 §4.2 a wildcard NS RRset is discouraged and does
    * not create a delegation, so wildcards are only allowed for A/CNAME/MX.
    */
-  @Matches(/^[^*]/, { message: 'name must not be a wildcard for NS records' })
+  @IsFQDN()
   name: string;
 
   /**
