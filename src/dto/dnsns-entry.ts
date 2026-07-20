@@ -14,6 +14,14 @@ export class DnsNsEntry extends DnsbaseEntry {
   server: string;
 
   /**
+   * Overrides the abstract base defined name record to redefine the validation rules for NS records.
+   * wildcards: per RFC 4592 §4.2 a wildcard NS RRset is discouraged and does
+   * not create a delegation, so wildcards are only allowed for A/CNAME/MX.
+   */
+  @IsFQDN()
+  name: string;
+
+  /**
    * Determines if another DnsNsEntry has the same values as this one.
    * Does not comapre identities only values.
    * @param otherEntry Other DnsNsEntry to compare values with

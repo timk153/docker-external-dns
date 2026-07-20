@@ -45,16 +45,19 @@ describe('DnsbaseEntry', () => {
     });
 
     describe('name', () => {
-      each(['test.work', 'www.test.work', 'ns1.test.work', 'mx.test.work']).it(
-        'should be a valid domain name (%p)',
-        async (domainName) => {
-          // arrange
-          sut.name = domainName;
+      each([
+        'test.work',
+        'www.test.work',
+        'ns1.test.work',
+        'mx.test.work',
+        '*.test.work',
+      ]).it('should be a valid domain name (%p)', async (domainName) => {
+        // arrange
+        sut.name = domainName;
 
-          // act / assert
-          expect(validate(sut)).resolves.toHaveLength(0);
-        },
-      );
+        // act / assert
+        expect(validate(sut)).resolves.toHaveLength(0);
+      });
 
       each(['a', 'em', '', '   ', '123', 'test@thing.com']).it(
         'should not be an invalid string (%p)',
