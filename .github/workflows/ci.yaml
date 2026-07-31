@@ -26,12 +26,17 @@ jobs:
             $name = "docker-compose-external-dns.quality.$identity"
             $amd64 = "$name.amd64"
             $arm64 = "$name.arm64"
-            docker build --platform linux/amd64 --target tests --tag $amd64 .
-            docker run --platform linux/amd64 -u root -v /var/run/docker.sock:/var/run/docker.sock --name $amd64 -a stdin -a stdout -a stderr $amd64
+
             mkdir output
             mkdir output/reports
+
+            docker build --platform linux/amd64 --target tests --tag $amd64 .
+            docker run --platform linux/amd64 -u root -v /var/run/docker.sock:/var/run/docker.sock --name $amd64 -a stdin -a stdout -a stderr $amd64
             docker cp "$($amd64):/app/src" "./output/src"
             docker cp "$($amd64):/app/reports" "./output/reports/amd64"
+            docker container rm $amd64
+            docker image rm $amd64
+
             docker build --platform linux/arm64 --target tests --tag $arm64 .
             docker run --platform linux/arm64 -u root -v /var/run/docker.sock:/var/run/docker.sock --name $arm64 -a stdin -a stdout -a stderr $arm64
             docker cp "$($arm64):/app/reports" "./output/reports/arm64"
