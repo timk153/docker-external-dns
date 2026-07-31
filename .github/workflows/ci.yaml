@@ -18,31 +18,35 @@ jobs:
       - uses: actions/checkout@v4
         name: Checkout
       - uses: Amadevus/pwsh-script@97a8b211a5922816aa8a69ced41fa32f23477186
-        name: 'Docker: generating quality reports (testing & linting)'
+        name: "Docker: generating quality reports (testing & linting)"
         id: script
         with:
           script: |
             $identity = New-Guid
             $name = "docker-compose-external-dns.quality.$identity"
-            docker build --target tests --tag $name .
-            docker run -u root -v /var/run/docker.sock:/var/run/docker.sock --name $name -a stdin -a stdout -a stderr $name
+            docker build --platform linux/amd64 --target tests --tag $name .
+            docker run --platform linux/amd64 -u root -v /var/run/docker.sock:/var/run/docker.sock --name $name -a stdin -a stdout -a stderr $name
             mkdir output
+            mkdir output/reports
             docker cp "$($name):/app/src" "./output/src"
-            docker cp "$($name):/app/reports" "./output/reports"
+            docker cp "$($name):/app/reports" "./output/reports/amd64"
+            docker build --platform linux/arm64 --target tests --tag $name .
+            docker run --platform linux/arm64 -u root -v /var/run/docker.sock:/var/run/docker.sock --name $name -a stdin -a stdout -a stderr $name
+            docker cp "$($name):/app/reports" "./output/reports/arm64"
             docker container rm $name
             docker image rm $name
       - uses: mikepenz/action-junit-report@db71d41eb79864e25ab0337e395c352e84523afe
         name: Publish Test Report
         if: success() || failure()
         with:
-          report_paths: './output/reports/*junit*.xml'
+          report_paths: "./output/reports/*/*junit*.xml"
           fail_on_failure: true
           include_passed: true
       - name: Run codacy-coverage-reporter
         uses: codacy/codacy-coverage-reporter-action@89d6c85cfafaec52c72b6c5e8b2878d33104c699
         with:
           api-token: ${{ secrets.CODACY_TOKEN }}
-          coverage-reports: 'output/reports/*cobertura*.xml'
+          coverage-reports: "output/reports/amd64/*cobertura*.xml"
       - uses: gaelgirodon/ci-badges-action@e2b7770c45a7c4be54af8b4b046afdeb09898dc4
         name: Generate CI badges
         if: github.ref == 'refs/heads/main'
