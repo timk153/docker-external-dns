@@ -24,17 +24,19 @@ jobs:
           script: |
             $identity = New-Guid
             $name = "docker-compose-external-dns.quality.$identity"
-            docker build --platform linux/amd64 --target tests --tag $name .
-            docker run --platform linux/amd64 -u root -v /var/run/docker.sock:/var/run/docker.sock --name $name -a stdin -a stdout -a stderr $name
+            $amd64 = "$name.amd64"
+            $arm64 = "$name.arm64"
+            docker build --platform linux/amd64 --target tests --tag $amd64 .
+            docker run --platform linux/amd64 -u root -v /var/run/docker.sock:/var/run/docker.sock --name $amd64 -a stdin -a stdout -a stderr $amd64
             mkdir output
             mkdir output/reports
-            docker cp "$($name):/app/src" "./output/src"
-            docker cp "$($name):/app/reports" "./output/reports/amd64"
-            docker build --platform linux/arm64 --target tests --tag $name .
-            docker run --platform linux/arm64 -u root -v /var/run/docker.sock:/var/run/docker.sock --name $name -a stdin -a stdout -a stderr $name
-            docker cp "$($name):/app/reports" "./output/reports/arm64"
-            docker container rm $name
-            docker image rm $name
+            docker cp "$($amd64):/app/src" "./output/src"
+            docker cp "$($amd64):/app/reports" "./output/reports/amd64"
+            docker build --platform linux/arm64 --target tests --tag $arm64 .
+            docker run --platform linux/arm64 -u root -v /var/run/docker.sock:/var/run/docker.sock --name $arm64 -a stdin -a stdout -a stderr $arm64
+            docker cp "$($arm64):/app/reports" "./output/reports/arm64"
+            docker container rm $arm64
+            docker image rm $arm64
       - uses: mikepenz/action-junit-report@db71d41eb79864e25ab0337e395c352e84523afe
         name: Publish Test Report
         if: success() || failure()
