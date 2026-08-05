@@ -34,4 +34,5 @@ COPY --from=build-results . /home/node/app
 WORKDIR /home/node/app
 ENV NODE_ENV=production
 EXPOSE 80
+USER node
 ENTRYPOINT ["node", "main.js"]
