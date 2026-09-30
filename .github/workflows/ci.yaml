@@ -11,44 +11,62 @@ permissions:
   checks: write
   pull-requests: write
 jobs:
-  quality_gateway:
-    name: Quality Gateway
-    runs-on: ubuntu-latest
+  quality_tests:
+    name: Quality Tests (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runs-on: ubuntu-latest
+            platform: linux/amd64
+          - arch: arm64
+            runs-on: ubuntu-24.04-arm
+            platform: linux/arm64
+    runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v4
         name: Checkout
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db
       - uses: Amadevus/pwsh-script@97a8b211a5922816aa8a69ced41fa32f23477186
         name: "Docker: generating quality reports (testing & linting)"
-        id: script
         with:
           script: |
-            $identity = New-Guid
-            $name = "docker-compose-external-dns.quality.$identity"
-            $amd64 = "$name.amd64"
-            $arm64 = "$name.arm64"
+            $name = "docker-compose-external-dns.quality.${{ matrix.arch }}.$(New-Guid)"
+            $platform = "${{ matrix.platform }}"
 
-            mkdir output
-            mkdir output/reports
+            New-Item -ItemType Directory -Force -Path "output/reports" | Out-Null
 
-            docker build --platform linux/amd64 --target tests --tag $amd64 .
-            docker run --platform linux/amd64 -u root -v /var/run/docker.sock:/var/run/docker.sock --name $amd64 -a stdin -a stdout -a stderr $amd64
-            docker cp "$($amd64):/app/src" "./output/src"
-            docker cp "$($amd64):/app/reports" "./output/reports/amd64"
-            docker container rm $amd64
-            docker image rm $amd64
-
-            docker build --platform linux/arm64 --target tests --tag $arm64 .
-            docker run --platform linux/arm64 -u root -v /var/run/docker.sock:/var/run/docker.sock --name $arm64 -a stdin -a stdout -a stderr $arm64
-            docker cp "$($arm64):/app/reports" "./output/reports/arm64"
-            docker container rm $arm64
-            docker image rm $arm64
+            docker build --platform $platform --target tests --tag $name .
+            docker run --platform $platform -u root -v /var/run/docker.sock:/var/run/docker.sock --name $name -a stdin -a stdout -a stderr $name
+            docker cp "$($name):/app/reports" "./output/reports"
+            docker container rm $name
+            docker image rm $name
+      - uses: actions/upload-artifact@v4
+        name: Upload test reports
+        with:
+          name: reports-${{ matrix.arch }}
+          path: output/reports/
+          if-no-files-found: error
+  quality_gateway:
+    name: Quality Gateway
+    if: success()
+    needs: quality_tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        name: Download amd64 reports
+        with:
+          name: reports-amd64
+          path: output/reports/amd64
+          if-no-files-found: error
+      - uses: actions/download-artifact@v4
+        name: Download arm64 reports
+        with:
+          name: reports-arm64
+          path: output/reports/arm64
+          if-no-files-found: error
       - uses: mikepenz/action-junit-report@db71d41eb79864e25ab0337e395c352e84523afe
         name: Publish Test Report
-        if: success() || failure()
         with:
           report_paths: "./output/reports/*/*junit*.xml"
           fail_on_failure: true
