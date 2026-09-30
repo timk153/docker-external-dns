@@ -38,14 +38,14 @@ jobs:
 
             docker build --platform $platform --target tests --tag $name .
             docker run --platform $platform -u root -v /var/run/docker.sock:/var/run/docker.sock --name $name -a stdin -a stdout -a stderr $name
-            docker cp "$($name):/app/reports" "./output/reports"
+            docker cp "$($name):/app/reports" "./output"
             docker container rm $name
             docker image rm $name
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         name: Upload test reports
         with:
           name: reports-${{ matrix.arch }}-${{ github.sha }}
-          path: output/reports/**/*.xml
+          path: output/reports/*.xml
           retention-days: 1
           if-no-files-found: error
   quality_gateway:
