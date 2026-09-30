@@ -45,7 +45,7 @@ jobs:
         name: Upload test reports
         with:
           name: reports-${{ matrix.arch }}-${{ github.sha }}
-          path: output/reports/*.xml
+          path: output/reports/**/*.xml
           retention-days: 1
           if-no-files-found: error
   quality_gateway:
