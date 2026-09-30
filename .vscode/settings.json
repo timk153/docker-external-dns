@@ -5,6 +5,7 @@
   "editor.formatOnType": true,
   "eslint.format.enable": false,
   "eslint.lintTask.enable": true,
+  "eslint.lintTask.command": "yarn lint",
   "editor.tabSize": 2,
   "typescript.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": false,
   "files.associations": {
