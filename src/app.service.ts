@@ -21,7 +21,7 @@ let loggerPointer: LoggerService;
 const LogDecorator = getLogClassDecorator(() => loggerPointer);
 
 /**
- * Possible states of AppService
+ * Possie states of AppService
  */
 export enum State {
   Uninitialized,

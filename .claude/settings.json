@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(yarn test *)",
+      "Bash(yarn lint *)",
+      "Bash(yarn format *)",
+      "Bash(yarn build *)",
+      "Bash(npx tsc --noEmit *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git branch *)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(yarn add *)",
+      "Bash(yarn remove *)",
+      "Bash(yarn upgrade *)",
+      "Bash(docker *)"
+    ],
+    "deny": [
+      "Read(./docker-compose*.yml)",
+      "Read(./docker-compose*.yaml)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(//run/secrets/**)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git reset --hard *)",
+      "Bash(docker system prune *)",
+      "Bash(docker volume rm *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | { read -r f; case \"$f\" in *.ts) npx prettier --write \"$f\";; esac; } 2>/dev/null || true",
+            "statusMessage": "Formatting with Prettier"
+          }
+        ]
+      }
+    ]
+  }
+}
