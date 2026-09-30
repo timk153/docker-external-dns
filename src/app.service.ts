@@ -20,11 +20,8 @@ import { DdnsService } from './ddns/ddns.service';
 let loggerPointer: LoggerService;
 const LogDecorator = getLogClassDecorator(() => loggerPointer);
 
-const test =
-  'test';
-
 /**
- * Possible states of AppService
+ * Possie states of AppService
  */
 export enum State {
   Uninitialized,
