@@ -1,5 +1,7 @@
 import { DnsbaseEntry, ICloudFlareEntry } from './dto/dnsbase-entry';
 
+var test = 'test';
+
 /**
  * Represents the DNS Entries set difference
  */
