@@ -46,7 +46,7 @@ jobs:
         with:
           name: reports-${{ matrix.arch }}-${{ github.sha }}
           path: output/reports/*.xml
-          retain-days: 1
+          retention-days: 1
           if-no-files-found: error
   quality_gateway:
     name: Quality Gateway
