@@ -5,6 +5,7 @@
     "resolvePackageJsonExports": true,
     "rootDir": ".",
     "types": ["node", "jest"],
+    "isolatedModules": true,
     "strictPropertyInitialization": false,
     "declaration": true,
     "removeComments": true,
