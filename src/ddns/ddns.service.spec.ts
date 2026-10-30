@@ -13,6 +13,7 @@ import { validDnsNsEntry } from '../dto/dnsns-entry.spec';
 import { DnsNsEntry } from '../dto/dnsns-entry';
 import { DdnsService, IPInfoIOResponse } from './ddns.service';
 import { State } from '../cron/cron.service';
+import { MockedConfigService } from '../@types/mock.types';
 
 describe('DdnsService', () => {
   let spyFetch: jest.SpyInstance;
@@ -28,7 +29,7 @@ describe('DdnsService', () => {
   let mockConsoleLoggerService: DeepMocked<ConsoleLoggerService>;
 
   const envDdnsExecutionFrequencyMinutes = 120;
-  let mockConfigService: DeepMocked<ConfigService>;
+  let mockConfigService: MockedConfigService;
   const mockConfigServiceGetValue = {
     DDNS_EXECUTION_FREQUENCY_MINUTES: envDdnsExecutionFrequencyMinutes,
   };
@@ -45,9 +46,7 @@ describe('DdnsService', () => {
 
     mockConsoleLoggerService = module.get(ConsoleLoggerService);
 
-    mockConfigService = module.get<ConfigService>(
-      ConfigService,
-    ) as DeepMocked<ConfigService>;
+    mockConfigService = module.get(ConfigService) as MockedConfigService;
     mockConfigService.get.mockImplementation(
       (propertyPath) => mockConfigServiceGetValue[propertyPath],
     );

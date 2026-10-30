@@ -18,6 +18,7 @@ import { DnsCnameEntry } from '../dto/dnscname-entry';
 import { DnsMxEntry } from '../dto/dnsmx-entry';
 import { DnsNsEntry } from '../dto/dnsns-entry';
 import { ConsoleLoggerService } from '../logger.service';
+import { MockedConfigService } from '../@types/mock.types';
 
 jest.mock('@nestjs/common', () => {
   const mock = jest.createMockFromModule('@nestjs/common') as any;
@@ -60,7 +61,7 @@ describe('DockerService', () => {
   const backupProcessEnv = process.env;
   let sut: DockerService;
   let mockDockerFactory: DeepMocked<DockerFactory>;
-  let mockConfigService: DeepMocked<ConfigService>;
+  let mockConfigService: MockedConfigService;
   let mockConsoleLoggerService: DeepMocked<ConsoleLoggerService>;
   const mockDockerFactoryGetValue = createMock<Docker>();
   const mockDockerListContainersValue: Docker.ContainerInfo[] = [
@@ -102,9 +103,7 @@ describe('DockerService', () => {
     ) as DeepMocked<DockerFactory>;
     mockDockerFactory.get.mockReturnValue(mockDockerFactoryGetValue);
 
-    mockConfigService = module.get<ConfigService>(
-      ConfigService,
-    ) as DeepMocked<ConfigService>;
+    mockConfigService = module.get(ConfigService) as MockedConfigService;
     mockConfigService.get.mockImplementation(
       (propertyPath) => mockConfigServiceGetValue[propertyPath],
     );
