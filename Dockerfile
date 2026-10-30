@@ -5,6 +5,7 @@ FROM node:lts-alpine AS base
 FROM base AS install
 WORKDIR /app
 COPY ["package.json", "yarn.lock", "/app/"]
+RUN npm install -g yarn@^1.22.19
 RUN yarn install && \
   yarn cache clean
 COPY . .
