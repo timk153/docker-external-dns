@@ -19,7 +19,7 @@ export class DnsNsEntry extends DnsbaseEntry {
    * not create a delegation, so wildcards are only allowed for A/CNAME/MX.
    */
   @IsFQDN()
-  name: string;
+  name: string = '';
 
   /**
    * Determines if another DnsNsEntry has the same values as this one.
