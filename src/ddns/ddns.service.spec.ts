@@ -28,7 +28,7 @@ describe('DdnsService', () => {
   let mockConsoleLoggerService: DeepMocked<ConsoleLoggerService>;
 
   const envDdnsExecutionFrequencyMinutes = 120;
-  let mockConfigService: DeepMocked<ConfigService>;
+  let mockConfigService: MockedConfigService;
   const mockConfigServiceGetValue = {
     DDNS_EXECUTION_FREQUENCY_MINUTES: envDdnsExecutionFrequencyMinutes,
   };
@@ -47,7 +47,7 @@ describe('DdnsService', () => {
 
     mockConfigService = module.get<ConfigService>(
       ConfigService,
-    ) as DeepMocked<ConfigService>;
+    ) as MockedConfigService;
     mockConfigService.get.mockImplementation(
       (propertyPath) => mockConfigServiceGetValue[propertyPath],
     );

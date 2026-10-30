@@ -50,6 +50,7 @@ import { DnsMxCloudflareEntry } from '../dto/dnsmx-cloudflare-entry';
 import { DnsNsCloudflareEntry } from '../dto/dnsns-cloudflare-entry';
 import { CloudFlareService, State } from './cloud-flare.service';
 import { NestedError } from '../errors/nested-error';
+import { MockedConfigService } from '../@types/mock.types';
 
 jest.mock('cloudflare');
 jest.mock('@nestjs/common', () => {
@@ -138,7 +139,7 @@ class CloudFlareDNSRecordBuilder<T extends Cloudflare.DNS.Records.Record> {
 
 describe('CloudFlareService', () => {
   let sut: CloudFlareService;
-  let mockConfigService: DeepMocked<ConfigService>;
+  let mockConfigService: MockedConfigService;
   let mockConsoleLoggerService: DeepMocked<ConsoleLoggerService>;
   const mockConfigServiceGetValues = {
     API_TOKEN: 'api-token',
@@ -156,9 +157,7 @@ describe('CloudFlareService', () => {
 
     sut = module.get<CloudFlareService>(CloudFlareService);
 
-    mockConfigService = module.get<ConfigService>(
-      ConfigService,
-    ) as DeepMocked<ConfigService>;
+    mockConfigService = module.get(ConfigService) as MockedConfigService;
     mockConfigService.get.mockImplementation(
       (property) => mockConfigServiceGetValues[property],
     );

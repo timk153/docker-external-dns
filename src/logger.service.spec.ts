@@ -4,10 +4,15 @@ import { createMock, DeepMocked } from '@golevelup/ts-jest';
 import { ConsoleLoggerService, isLogLevel } from './logger.service';
 
 describe('LoggerService', () => {
+  let mockSpyConfigService: Omit<DeepMocked<ConfigService>, 'get'> & {
+    get: jest.Mock;
+  };
   let mockConfigService: DeepMocked<ConfigService>;
 
   beforeAll(async () => {
     mockConfigService = createMock<ConfigService>();
+    mockSpyConfigService =
+      mockConfigService as unknown as typeof mockSpyConfigService;
   });
 
   const logLevelResults = {
@@ -30,7 +35,7 @@ describe('LoggerService', () => {
     'Should log output for the appropriate levels (level %p)',
     async (level: 'fatal' | 'error' | 'warn' | 'log' | 'debug' | 'verbose') => {
       // arrange
-      mockConfigService.get.mockImplementation((property) => {
+      mockSpyConfigService.get.mockImplementation((property) => {
         if (property === 'LOG_LEVEL') return level;
         return undefined;
       });
@@ -51,7 +56,7 @@ describe('LoggerService', () => {
   it('Should default to error if supplied LOG_LEVEL is invalid, otherwise the errors arent visible', () => {
     // arrange
     const expectedLevel = 'error';
-    mockConfigService.get.mockImplementation((property) => {
+    mockSpyConfigService.get.mockImplementation((property) => {
       if (property === 'LOG_LEVEL') return 'invalid-level';
       return undefined;
     });

@@ -15,7 +15,7 @@ import {
 } from 'cloudflare/resources/dns/records';
 import { PagePromise } from 'cloudflare/core';
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
-import { DNS } from 'cloudflare/resources';
+import { DNS } from 'cloudflare/resources/dns/dns';
 import { DnsbaseEntry } from '../src/dto/dnsbase-entry';
 import { DnsaEntry, isDnsAEntry } from '../src/dto/dnsa-entry';
 import { DnsCnameEntry, isDnsCnameEntry } from '../src/dto/dnscname-entry';

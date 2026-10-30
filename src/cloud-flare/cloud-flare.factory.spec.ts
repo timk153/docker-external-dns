@@ -12,13 +12,14 @@ import { validDnsNsEntry } from '../dto/dnsns-entry.spec';
 import { DnsNsEntry } from '../dto/dnsns-entry';
 import { CloudFlareFactory } from './cloud-flare.factory';
 import { ConsoleLoggerService } from '../logger.service';
+import { MockedConfigService } from '../@types/mock.types';
 
 describe('CloudFlareFactory', () => {
   let sut: CloudFlareFactory;
   const paramZoneId = 'zone-id';
   const paramEntryIdentifier = 'project-label:instance-id';
 
-  let mockConfigService: DeepMocked<ConfigService>;
+  let mockConfigService: MockedConfigService;
   const mockConfigServiceGetValues = {
     ENTRY_IDENTIFIER: paramEntryIdentifier,
   };
@@ -35,9 +36,7 @@ describe('CloudFlareFactory', () => {
 
     sut = module.get<CloudFlareFactory>(CloudFlareFactory);
 
-    mockConfigService = module.get<ConfigService>(
-      ConfigService,
-    ) as DeepMocked<ConfigService>;
+    mockConfigService = module.get(ConfigService) as MockedConfigService;
     mockConfigService.get.mockImplementation(
       (property) => mockConfigServiceGetValues[property],
     );

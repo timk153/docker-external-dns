@@ -19,6 +19,7 @@ import { isDnsNsEntry } from './dto/dnsns-entry';
 import { ConsoleLoggerService } from './logger.service';
 import { DdnsService } from './ddns/ddns.service';
 import { State as CronState } from './cron/cron.service';
+import { MockedConfigService } from './@types/mock.types';
 
 jest.mock('./app.functions');
 jest.mock('./dto/dnsa-entry', () => {
@@ -166,7 +167,7 @@ describe('AppService', () => {
   let mockCloudFlareFactory: DeepMocked<CloudFlareFactory>;
   let mockConsoleLoggerService: DeepMocked<ConsoleLoggerService>;
   const envExecutionFrequencySeconds = 999;
-  let mockConfigService: DeepMocked<ConfigService>;
+  let mockConfigService: MockedConfigService;
   const mockConfigServiceGetValue = {
     EXECUTION_FREQUENCY_SECONDS: envExecutionFrequencySeconds,
   };
@@ -229,7 +230,7 @@ describe('AppService', () => {
 
     mockConsoleLoggerService = module.get(ConsoleLoggerService);
 
-    mockConfigService = module.get(ConfigService) as DeepMocked<ConfigService>;
+    mockConfigService = module.get(ConfigService) as MockedConfigService;
     mockConfigService.get.mockImplementation(
       (propertyPath) => mockConfigServiceGetValue[propertyPath],
     );
