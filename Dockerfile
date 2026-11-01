@@ -5,7 +5,6 @@ FROM dhi.io/node:26-alpine-dev AS base
 FROM base AS install
 WORKDIR /app
 COPY ["package.json", "yarn.lock", "/app/"]
-# RUN npm install -g yarn@^1.22.19
 RUN yarn install && \
   yarn cache clean
 COPY . .
