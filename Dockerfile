@@ -1,11 +1,11 @@
 # Get node image needed for development & building
-FROM node:lts-alpine AS base
+FROM dhi.io/node:26-alpine-dev AS base
 
 # Install
 FROM base AS install
 WORKDIR /app
 COPY ["package.json", "yarn.lock", "/app/"]
-RUN npm install -g yarn@^1.22.19
+# RUN npm install -g yarn@^1.22.19
 RUN yarn install && \
   yarn cache clean
 COPY . .
@@ -30,10 +30,8 @@ WORKDIR /
 COPY --from=build /app/dist .
 
 # Production
-FROM base AS production
+FROM dhi.io/node:26-alpine AS production
 COPY --from=build-results . /home/node/app
 WORKDIR /home/node/app
 ENV NODE_ENV=production
-EXPOSE 80
-USER node
 ENTRYPOINT ["node", "main.js"]
