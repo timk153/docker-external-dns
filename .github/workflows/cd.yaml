@@ -6,8 +6,10 @@ on:
       - "*"
   workflow_dispatch:
 jobs:
-  deployment:
+  prepare:
     runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.compute-versions.outputs.result }}
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         name: Checkout
@@ -35,27 +37,97 @@ jobs:
               if([version]$gitVersion -ge [version]$latestMajorVersion) {
                 # it's equal to or greater than
                 # add latest tag to output
-                $latestMajorTag = ", timk153/docker-external-dns:$($majorVersion)-latest"
+                $latestMajorTag = "timk153/docker-external-dns:$($majorVersion)-latest"
               }
               if([version]$gitVersion -ge [version]$latestVersion) {
-                $latestTag = ', timk153/docker-external-dns:latest'
+                $latestTag = 'timk153/docker-external-dns:latest'
               }
             }
-            return "timk153/docker-external-dns:$($gitVersion)$($latestMajorTag)$($latestTag)"
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db
-      - name: Login to Docker Hub
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+            $gitTag = "timk153/docker-external-dns:$($gitVersion)"
+            return ConvertTo-Json -InputObject @($gitTag, $latestMajorTag, $latestTag) -Compress
+
+  # Matrix jobs share output names, so their digests can overwrite each other.
+  # Keep one job per platform to expose a distinct digest to the manifest job.
+  publish-amd64:
+    name: Publish amd64
+    needs: prepare
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        name: Checkout
+      - uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db
+        name: Set up Docker Buildx
+      - uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+        name: Login to Docker Hub
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push
+      - name: Build and push platform image
+        id: build
         uses: docker/build-push-action@5cd11c3a4ced054e52742c5fd54dca954e0edd85
         with:
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.compute-versions.outputs.result }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          context: .
+          platforms: linux/amd64
+          outputs: type=image,name=timk153/docker-external-dns,push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=amd64
+          cache-to: type=gha,mode=max,scope=amd64
+
+  publish-arm64:
+    name: Publish arm64
+    needs: prepare
+    runs-on: ubuntu-24.04-arm
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        name: Checkout
+      - uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db
+        name: Set up Docker Buildx
+      - uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+        name: Login to Docker Hub
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push platform image
+        id: build
+        uses: docker/build-push-action@5cd11c3a4ced054e52742c5fd54dca954e0edd85
+        with:
+          context: .
+          platforms: linux/arm64
+          outputs: type=image,name=timk153/docker-external-dns,push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=arm64
+          cache-to: type=gha,mode=max,scope=arm64
+
+  create-manifest:
+    name: Create multi-platform manifest
+    needs:
+      - prepare
+      - publish-amd64
+      - publish-arm64
+    if: ${{ needs.publish-amd64.outputs.digest != '' && needs.publish-arm64.outputs.digest != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db
+        name: Set up Docker Buildx
+      - uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+        name: Login to Docker Hub
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Create and push manifest
+        env:
+          IMAGE_TAGS: ${{ needs.prepare.outputs.tags }}
+          AMD64_DIGEST: ${{ needs.publish-amd64.outputs.digest }}
+          ARM64_DIGEST: ${{ needs.publish-arm64.outputs.digest }}
+        run: |
+          image_tag_args() {
+            jq -r '.[] | "--tag\n" + .' <<< "$1"
+          }
+          mapfile -t image_tags < <(image_tag_args "$IMAGE_TAGS")
+
+          docker buildx imagetools create \
+            "${image_tags[@]}" \
+            "timk153/docker-external-dns@$AMD64_DIGEST" \
+            "timk153/docker-external-dns@$ARM64_DIGEST"
