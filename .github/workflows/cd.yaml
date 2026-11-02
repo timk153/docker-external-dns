@@ -21,8 +21,7 @@ jobs:
         with:
           script: |
             $gitVersion = git describe --tags
-            $latestMajorTag = ''
-            $latestTag = ''
+            $outputTags = @()
             if ($gitVersion -match '^\d+.\d+.\d+$') {
               # get all tags in semver order oldest to newest
               $tags = git tag -l --sort=version:refname  | Where-Object { $_ -Match '^\d+\.\d+\.\d+$' }
@@ -37,14 +36,14 @@ jobs:
               if([version]$gitVersion -ge [version]$latestMajorVersion) {
                 # it's equal to or greater than
                 # add latest tag to output
-                $latestMajorTag = "timk153/docker-external-dns:$($majorVersion)-latest"
+                $outputTags += "timk153/docker-external-dns:$($majorVersion)-latest"
               }
               if([version]$gitVersion -ge [version]$latestVersion) {
-                $latestTag = 'timk153/docker-external-dns:latest'
+                $outputTags += 'timk153/docker-external-dns:latest'
               }
             }
-            $gitTag = "timk153/docker-external-dns:$($gitVersion)"
-            return ConvertTo-Json -InputObject @($gitTag, $latestMajorTag, $latestTag) -Compress
+            $outputTags += "timk153/docker-external-dns:$($gitVersion)"
+            return ConvertTo-Json -InputObject $outputTags -Compress
 
   # Matrix jobs share output names, so their digests can overwrite each other.
   # Keep one job per platform to expose a distinct digest to the manifest job.
